@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>قطار الذهب – by gold</title>
+<style>
+:root{--coal:#15120f;--brass:#ffc83d;--fg:#f4efe6;--rust:#c2562b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--coal);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 0;pointer-events:none}
+#top{display:flex;gap:8px;flex-wrap:wrap}
+#top span{background:#15120fcc;border:1px solid #ffc83d55;border-radius:10px;padding:5px 10px;font-size:15px}
+#warn{margin-top:8px;font-size:15px;font-weight:700;text-shadow:0 1px 6px #000}
+#warn.bad{color:#ff6a4a}
+#share{position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 50px);background:#15120fcc;color:var(--fg);border:1px solid #ffc83d55;border-radius:10px;padding:6px 12px;font-size:14px}
+#msg{position:fixed;top:32%;left:0;right:0;text-align:center;font-size:24px;font-weight:800;text-shadow:0 2px 10px #000;pointer-events:none;padding:0 20px}
+#by{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);color:var(--brass);font:italic 700 16px Georgia,serif;opacity:.9;pointer-events:none}
+#pad{position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:140px;height:140px;border-radius:50%;background:#ffffff18;border:2px solid #ffffff3a;touch-action:none;display:grid;place-items:center}
+#kn{width:56px;height:56px;border-radius:50%;background:var(--brass);opacity:.92}
+#act{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);width:112px;height:112px;border-radius:50%;border:3px solid var(--brass);background:#15120fd9;color:var(--fg);font-size:17px;font-weight:700;touch-action:none;opacity:.55}
+#act.on{background:var(--brass);color:#1a1409;opacity:1}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;background:radial-gradient(ellipse at 50% 30%,#2b2118,var(--coal) 70%)}
+.ov h1{font-size:40px;margin:0;letter-spacing:-.5px}
+.g{color:var(--brass);font:italic 700 36px Georgia,serif}
+.ov p{margin:0;opacity:.8;max-width:310px;line-height:1.7}
+.ov input{background:#ffffff14;border:1px solid #ffc83d88;color:var(--fg);border-radius:12px;padding:12px;font-size:18px;text-align:center;width:200px;direction:ltr}
+.ov button{background:var(--brass);color:#1a1409;border:0;border-radius:14px;padding:14px 44px;font-size:20px;font-weight:800}
+#desk{display:none}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud"><div id="top"><span>🪵 <b id="kw">0</b></span><span>🪨 <b id="ks">0</b></span><span>⛓️ <b id="ki">0</b></span><span>🛤️ <b id="kr">0</b></span><span>🌍 <b id="lv">1</b></span><span>👥 <b id="np">1</b></span></div><div id="warn"></div></div>
+<button id="share">🔗 دعوة الأصدقاء</button>
+<div id="msg"></div><div id="by">by gold</div>
+<div id="pad"><div id="kn"></div></div><button id="act">—</button>
+<div id="ttl" class="ov"><h1>قطار الذهب</h1><div class="g">by gold</div>
+<p>القطار لا يتوقف. اقطعوا الأشجار وكسّروا الحجر والحديد، اصنعوا السكك في العربة وضعوها أمامه قبل أن يصل لآخرها.</p>
+<input id="room" maxlength="12" autocomplete="off" aria-label="رمز الغرفة"><p id="rh">أعطوا أصدقاءك نفس رمز الغرفة ليلعبوا معك.</p><button id="go">ابدأ</button></div>
+<div id="desk" class="ov"><h1>📱</h1><p>هذه اللعبة مخصصة للهاتف فقط. افتح الرابط من جوالك.</p><div class="g">by gold</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),T=THREE;
+if(!(matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0)){$('desk').style.display='flex';$('ttl').style.display='none'}else main();
+function main(){
+const W=21,L=80;
+let tiles=new Uint8Array(W*L),path=[],stn=[10,77],ws=null,tries=0,room='gold',me=0,lv=1,ps=3,pc=3,started=false;
+let S={v:.6,st:'play',tm:0,k:{w:0,s:0,i:0,r:0},pl:[],h:null};
+const mine={x:10.5,z:6.5,r:0},foc=new T.Vector3(10.5,0,8);
+let jx=0,jy=0,acting=false,swing=0,tPos=0,tAct=0,hudT=0,smokeT=0;
+// ---------- renderer / scene ----------
+const ren=new T.WebGLRenderer({canvas:$('c'),antialias:true});ren.setPixelRatio(Math.min(devicePixelRatio,1.75));
+ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;ren.outputEncoding=T.sRGBEncoding;ren.toneMapping=T.ACESFilmicToneMapping;ren.toneMappingExposure=1.1;
+const sc=new T.Scene();sc.background=new T.Color(0xb7d3e4);sc.fog=new T.Fog(0xb7d3e4,20,52);
+const cam=new T.PerspectiveCamera(50,1,.1,80);
+sc.add(new T.HemisphereLight(0xd4ebff,0x5a4b3a,.95));
+const sun=new T.DirectionalLight(0xfff0d2,1.7);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+const sh=sun.shadow.camera;sh.left=sh.bottom=-15;sh.right=sh.top=15;sh.near=1;sh.far=60;sun.shadow.bias=-.0006;sc.add(sun,sun.target);
+function ctex(fn,w=256,h=256){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.wrapS=t.wrapT=T.RepeatWrapping;return t}
+const gt=ctex((x,w,h)=>{x.fillStyle='#4d7a38';x.fillRect(0,0,w,h);for(let i=0;i<3500;i++){x.fillStyle=`hsl(${80+Math.random()*35},${35+Math.random()*25}%,${24+Math.random()*22}%)`;x.fillRect(Math.random()*w,Math.random()*h,2,4)}});
+gt.repeat.set((W+30)/2.5,(L+40)/2.5);gt.anisotropy=4;
+const ground=new T.Mesh(new T.PlaneGeometry(W+30,L+40),new T.MeshStandardMaterial({map:gt,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.set(W/2,0,L/2);ground.receiveShadow=true;sc.add(ground);
+const goldTex=ctex((x,w,h)=>{x.fillStyle='#2a1f14';x.fillRect(0,0,w,h);x.strokeStyle='#ffc83d';x.lineWidth=5;x.strokeRect(6,6,w-12,h-12);x.fillStyle='#ffc83d';x.font='italic bold 78px Georgia,serif';x.textAlign='center';x.textBaseline='middle';x.fillText('by gold',w/2,h/2+4)},512,128);
+goldTex.wrapS=goldTex.wrapT=T.ClampToEdgeWrapping;
+// ---------- instanced world ----------
+const N=W*L,dm=new T.Object3D(),col=new T.Color();
+const IM=(g,m,n)=>{const o=new T.InstancedMesh(g,m,n);o.castShadow=o.receiveShadow=true;o.count=0;o.frustumCulled=false;sc.add(o);return o};
+const std=(c,r=.9,m=0,f=false)=>new T.MeshStandardMaterial({color:c,roughness:r,metalness:m,flatShading:f});
+const trunk=IM(new T.CylinderGeometry(.09,.16,1,6).translate(0,.5,0),std(0x5b3a22),N);
+const fol=[0,1].map(k=>IM(new T.ConeGeometry(.58-k*.17,.95,7).translate(0,1.0+k*.6,0),std(0xffffff,.85),N));
+const rock=IM(new T.DodecahedronGeometry(.42,0).translate(0,.2,0),std(0xffffff,.95,0,true),N);
+const iron=IM(new T.DodecahedronGeometry(.4,0).translate(0,.2,0),std(0xffffff,.45,.55,true),N);
+const water=IM(new T.BoxGeometry(1,.1,1).translate(0,-.03,0),new T.MeshStandardMaterial({color:0x2b6f9c,roughness:.12,metalness:.15}),N);
+water.castShadow=false;
+const sleep=IM(new T.BoxGeometry(.72,.06,.12),std(0x4a3320),1200),bars=IM(new T.BoxGeometry(.05,.07,1.02),std(0xb9bcc2,.35,.85),800);
+const hh=(x,z)=>{const s=Math.sin(x*12.9898+z*78.233)*43758.5453;return s-Math.floor(s)};
+function rebuild(){let a=0,b=0,c=0,d=0,e=0;
+for(let z=0;z<L;z++)for(let x=0;x<W;x++){const v=tiles[z*W+x];if(!v||v>4)continue;const r=hh(x,z),r2=hh(z,x+3);
+dm.position.set(x+.5+(r-.5)*.3,0,z+.5+(r2-.5)*.3);dm.rotation.set(0,r*6.28,0);
+if(v===1){const s=.8+r*.7;dm.scale.set(s,s*(.9+r2*.5),s);dm.updateMatrix();trunk.setMatrixAt(a,dm.matrix);fol[0].setMatrixAt(a,dm.matrix);fol[1].setMatrixAt(a,dm.matrix);
+col.setHSL(.26+r2*.08,.5,.2+r*.12);fol[0].setColorAt(a,col);fol[1].setColorAt(a,col);a++}
+else if(v===2){const s=.8+r*.6;dm.scale.set(s,s*.8,s);dm.updateMatrix();rock.setMatrixAt(b,dm.matrix);col.setHSL(.08,.05,.38+r2*.15);rock.setColorAt(b,col);b++}
+else if(v===3){dm.scale.set(.9,.8,.9);dm.updateMatrix();iron.setMatrixAt(c,dm.matrix);col.setHSL(.05+r2*.04,.55,.32+r*.1);iron.setColorAt(c,col);c++}
+else{dm.position.set(x+.5,0,z+.5);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();water.setMatrixAt(d,dm.matrix);d++}}
+dm.scale.set(1,1,1);
+for(const [o,n] of [[trunk,a],[fol[0],a],[fol[1],a],[rock,b],[iron,c],[water,d]]){o.count=n;o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true}}
+function rails(){let a=0,b=0;
+for(let i=0;i<path.length-1;i++){const p=path[i],q=path[i+1],mx=(p[0]+q[0])/2+.5,mz=(p[1]+q[1])/2+.5,ry=q[0]!==p[0]?Math.PI/2:0;
+dm.rotation.set(0,ry,0);dm.scale.set(1,1,1);
+for(let k=-1;k<=1;k++){dm.position.set(mx+(ry?k*.3:0),.04,mz+(ry?0:k*.3));dm.updateMatrix();sleep.setMatrixAt(a++,dm.matrix)}
+for(const s of[-1,1]){dm.position.set(mx+(ry?0:s*.2),.1,mz+(ry?s*.2:0));dm.updateMatrix();bars.setMatrixAt(b++,dm.matrix)}}
+sleep.count=a;bars.count=b;sleep.instanceMatrix.needsUpdate=bars.instanceMatrix.needsUpdate=true}
+let stg=null;const paintR=std(0x8a1c1c,.45,.3),steel=std(0x23262b,.4,.7),wood=std(0x7a5230,.8);
+function station(){if(stg)sc.remove(stg);stg=new T.Group();const x=stn[0]+.5,z=stn[1]+.5,add=(g,m,px,py,pz)=>{const o=new T.Mesh(g,m);o.position.set(px,py,pz);o.castShadow=o.receiveShadow=true;stg.add(o);return o};
+add(new T.BoxGeometry(1,.05,1),std(0xffc83d,.3,.6),x,.04,z);
+add(new T.BoxGeometry(2.4,.3,6),std(0x9a958c),x+2,.15,z);add(new T.BoxGeometry(2.9,.12,6.4),paintR,x+2,2.1,z);
+for(const dz of[-2.8,2.8])add(new T.BoxGeometry(.12,1.9,.12),steel,x+2.9,1.1,z+dz);
+const sg=new T.Mesh(new T.PlaneGeometry(2.4,.6),new T.MeshBasicMaterial({map:goldTex}));sg.position.set(x+.77,1.5,z);sg.rotation.y=-Math.PI/2;stg.add(sg);sc.add(stg)}
+// ---------- train ----------
+function car(kind){const g=new T.Group(),add=(geo,m,x,y,z,rx,rz)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;if(rz)o.rotation.z=rz;o.castShadow=true;g.add(o);return o};
+add(new T.BoxGeometry(.7,.12,1.0),steel,0,.28,0);
+for(const sx of[-.3,.3])for(const sz of[-.3,.3])add(new T.CylinderGeometry(.16,.16,.08,14),steel,sx,.16,sz,0,Math.PI/2);
+if(kind==='loco'){add(new T.CylinderGeometry(.27,.27,.95,16),paintR,0,.62,.12,Math.PI/2);add(new T.CylinderGeometry(.08,.11,.34,10),steel,0,1.0,.4);
+add(new T.BoxGeometry(.64,.58,.42),paintR,0,.74,-.36);add(new T.BoxGeometry(.74,.06,.52),steel,0,1.06,-.36);
+add(new T.CylinderGeometry(.28,.28,.05,16),std(0xffc83d,.3,.7),0,.62,.62,Math.PI/2);add(new T.BoxGeometry(.3,.12,.2),steel,0,.26,.6)}
+else if(kind==='tender'){add(new T.BoxGeometry(.66,.34,.72),wood,0,.5,0);add(new T.SphereGeometry(.26,8,6),std(0x111111,.9),0,.7,0)}
+else{add(new T.BoxGeometry(.7,.42,.98),wood,0,.52,0);add(new T.BoxGeometry(.34,.3,.34),std(0x946a3a),0,.88,.1);
+for(const s of[-1,1]){const p=new T.Mesh(new T.PlaneGeometry(.78,.2),new T.MeshBasicMaterial({map:goldTex}));p.position.set(s*.355,.55,0);p.rotation.y=s*Math.PI/2;g.add(p)}}
+g.traverse(o=>{if(o.isMesh)o.receiveShadow=true});sc.add(g);return g}
+const loco=car('loco'),tender=car('tender'),craft=car('craft');
+function posAt(q){const n=path.length;if(n<2)return{x:10.5,z:q+.5};let i=Math.floor(q),f=q-i;if(q<0){i=0;f=q}if(i>=n-1){i=n-2;f=1}const a=path[i],b=path[i+1];return{x:a[0]+.5+(b[0]-a[0])*f,z:a[1]+.5+(b[1]-a[1])*f}}
+function place(g,q){const a=posAt(q+.3),b=posAt(q-.3);g.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);g.rotation.y=Math.atan2(a.x-b.x,a.z-b.z)}
+// smoke
+const smoke=[],sm=new T.MeshBasicMaterial({color:0xdddddd,transparent:true,opacity:.5,depthWrite:false});
+for(let i=0;i<14;i++){const m=new T.Mesh(new T.SphereGeometry(.16,8,6),sm.clone());m.visible=false;m.userData.t=9;sc.add(m);smoke.push(m)}
+// ---------- players ----------
+const PM={};
+function pmesh(id){const c=new T.Color().setHSL((id*.17)%1,.7,.55),m=std(c,.6),g=new T.Group(),add=(geo,mm,x,y,z,p)=>{const o=new T.Mesh(geo,mm);o.position.set(x,y,z);o.castShadow=true;(p||g).add(o);return o};
+add(new T.CylinderGeometry(.18,.22,.55,10),m,0,.42,0);add(new T.SphereGeometry(.17,12,10),std(0xe8b98f,.7),0,.83,0);add(new T.CylinderGeometry(.2,.2,.05,12),std(0x222222),0,.97,0);
+const tool=new T.Group();tool.position.set(.27,.55,.05);add(new T.BoxGeometry(.04,.42,.04),wood,0,.12,.1,tool);add(new T.BoxGeometry(.2,.08,.05),steel,0,.34,.1,tool);g.add(tool);g.userData.tool=tool;sc.add(g);return g}
+const mark=new T.Mesh(new T.BoxGeometry(.96,.05,.96),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.45}));mark.visible=false;sc.add(mark);
+// ---------- network ----------
+function connect(){ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws?r='+room);
+ws.onopen=()=>{tries=0};ws.onmessage=e=>onmsg(JSON.parse(e.data));ws.onclose=()=>{if(started)setTimeout(connect,Math.min(4000,400*++tries))}}
+const tx=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+function onmsg(m){
+if(m.t==='world'){lv=m.lv;tiles=Uint8Array.from(m.tiles,Number);path=m.path;stn=m.st;mine.x=m.you[0];mine.z=m.you[1];ps=pc=3;rebuild();rails();station()}
+else if(m.t==='tile'){tiles[m.z*W+m.x]=m.v;rebuild()}
+else if(m.t==='rail'){if(tiles[m.z*W+m.x]===0)tiles[m.z*W+m.x]=5;path.push([m.x,m.z]);rails()}
+else if(m.t==='s'){S=m;me=m.me;ps=m.p}}
+// ---------- input ----------
+const pad=$('pad'),kn=$('kn'),act=$('act');
+function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/50,dy=(e.clientY-r.top-r.height/2)/50;const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}jx=dx;jy=dy;kn.style.transform=`translate(${dx*40}px,${dy*40}px)`}
+pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);jm(e)});
+pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))jm(e)});
+const pup=()=>{jx=jy=0;kn.style.transform=''};pad.addEventListener('pointerup',pup);pad.addEventListener('pointercancel',pup);
+act.addEventListener('pointerdown',e=>{act.setPointerCapture(e.pointerId);acting=true});
+const aup=()=>{acting=false};act.addEventListener('pointerup',aup);act.addEventListener('pointercancel',aup);
+const solid=(x,z)=>{const a=Math.floor(x),b=Math.floor(z);if(a<0||b<0||a>=W||b>=L)return true;const v=tiles[b*W+a];return v>0&&v<5};
+const ok=(x,z)=>!solid(x-.2,z-.2)&&!solid(x+.2,z-.2)&&!solid(x-.2,z+.2)&&!solid(x+.2,z+.2);
+// ---------- loop ----------
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.1);last=now;if(started)step(dt);draw(dt)}
+function step(dt){
+const dx=-jx*3.2*dt,dz=-jy*3.2*dt;
+if(S.st==='play'||S.st==='station'){if(dx||dz){if(ok(mine.x+dx,mine.z))mine.x+=dx;if(ok(mine.x,mine.z+dz))mine.z+=dz;mine.r=Math.atan2(dx,dz)}}
+tPos+=dt;if(tPos>.066){tPos=0;tx({t:'pos',x:+mine.x.toFixed(2),z:+mine.z.toFixed(2),r:+mine.r.toFixed(2)})}
+tAct-=dt;if(acting&&tAct<=0){tAct=.15;tx({t:'act'});if(S.h)swing=.3}
+if(S.st==='play')ps+=S.v*dt;pc+=(ps-pc)*Math.min(1,dt*6);
+hudT+=dt;if(hudT>.2){hudT=0;hud()}}
+function hud(){if(!path.length)return;const k=S.k;$('kw').textContent=k.w;$('ks').textContent=k.s;$('ki').textContent=k.i;$('kr').textContent=k.r;$('lv').textContent=lv;$('np').textContent=S.pl.length;
+const left=Math.max(0,path.length-1-pc),w=$('warn'),gap=stn[1]-path[path.length-1][1];
+w.textContent='سكك أمام القطار: '+Math.floor(left)+'  ·  باقي للمحطة: '+gap;w.className=left<6?'bad':'';
+const h=S.h;let t='—';if(h){if(h.k==='hit')t=tiles[h.z*W+h.x]===1?'اقطع 🪓':'كسّر ⛏️';else if(h.k==='craft')t='اصنع 🛤️';else t='ضع سكة'}
+act.textContent=t;act.className=h?'on':'';
+$('msg').textContent=S.st==='over'?'خسرتم! القطار وصل لآخر سكة. إعادة بعد '+S.tm:S.st==='station'?'وصلتم المحطة! عالم جديد بعد '+S.tm:''}
+function draw(dt){
+place(loco,pc);place(tender,pc-1.1);place(craft,pc-2.2);
+// players
+const seen={};for(const p of S.pl){const id=p[0];seen[id]=1;const m=PM[id]||(PM[id]=pmesh(id)),self=id===me,k=Math.min(1,dt*12);
+const tx=self?mine.x:p[1],tz=self?mine.z:p[2],mv=Math.hypot(tx-m.position.x,tz-m.position.z);
+m.position.x+=(tx-m.position.x)*k;m.position.z+=(tz-m.position.z)*k;m.position.y=Math.abs(Math.sin(now2()*9))*Math.min(.08,mv*2);
+const r=self?mine.r:p[3];m.rotation.y+=Math.atan2(Math.sin(r-m.rotation.y),Math.cos(r-m.rotation.y))*Math.min(1,dt*10);
+const tl=m.userData.tool;tl.rotation.x=self&&swing>0?-Math.sin(swing*Math.PI/.3)*1.4:0}
+for(const k in PM)if(!seen[k]){sc.remove(PM[k]);delete PM[k]}
+if(swing>0)swing-=dt;
+// target marker
+const h=S.h;if(h&&S.st==='play'){mark.visible=true;const gx=h.k==='hit'?h.x:h.k==='rail'?h.gx:null,gz=h.k==='hit'?h.z:h.gz;
+if(gx==null)mark.visible=false;else{mark.position.set(gx+.5,.06,gz+.5);mark.material.color.set(h.k==='hit'?0xffffff:0xffc83d)}}else mark.visible=false;
+// smoke
+smokeT-=dt;if(smokeT<=0&&started){smokeT=.16;const m=smoke.find(s=>s.userData.t>=2);if(m){const v=new T.Vector3(0,1.15,.4);loco.localToWorld(v);m.position.copy(v);m.userData.t=0;m.scale.setScalar(.6);m.visible=true}}
+for(const m of smoke){if(!m.visible)continue;m.userData.t+=dt;const u=m.userData.t/2;if(u>=1){m.visible=false;continue}m.position.y+=dt*.55;m.position.x+=dt*.1;m.scale.setScalar(.6+u*1.8);m.material.opacity=.5*(1-u)}
+// camera + sun
+const fx=mine.x,fz=mine.z;foc.x+=(fx-foc.x)*Math.min(1,dt*5);foc.z+=(fz-foc.z)*Math.min(1,dt*5);
+cam.position.set(foc.x,10.5,foc.z-7.6);cam.lookAt(foc.x,0,foc.z+1.4);
+sun.position.set(foc.x-9,20,foc.z-5);sun.target.position.set(foc.x,0,foc.z);
+ren.render(sc,cam)}
+const now2=()=>performance.now()/1000;
+function size(){ren.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();requestAnimationFrame(loop);
+// ---------- start / share ----------
+const q=new URLSearchParams(location.search).get('r');
+$('room').value=q||Math.random().toString(36).slice(2,6);
+$('go').onclick=()=>{room=($('room').value||'gold').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12)||'gold';
+history.replaceState(null,'','?r='+room);$('ttl').style.display='none';started=true;connect()};
+$('share').onclick=()=>{const u=location.origin+'/?r='+room;if(navigator.share)navigator.share({title:'قطار الذهب – by gold',url:u}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(u)};
+}
+</script></body></html>
