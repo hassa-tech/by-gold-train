@@ -1,12 +1,17 @@
-// by gold - train game server (authoritative world + WebSocket rooms)
-const http = require('http'), fs = require('fs'), { WebSocketServer } = require('ws');
+// by gold - train game server (plain HTTP + Server-Sent Events, no extra packages)
+const http = require('http'), fs = require('fs'), crypto = require('crypto');
 const W = 21, L = 80, SPEED = 0.6, HP = { 1: 3, 2: 4, 3: 5 }, KEY = { 1: 'w', 2: 's', 3: 'i' };
-const srv = http.createServer((q, r) => {
-  if (q.url === '/healthz') return r.end('ok');
-  r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  r.end(fs.readFileSync(__dirname + '/index.html'));
-});
-const wss = new WebSocketServer({ server: srv, path: '/ws' });
+// Small connection layer injected into the page: same interface the game already uses, carried over SSE + POST.
+const SHIM = '<script>(function(){function N(url){var self=this,r=new URL(url).searchParams.get("r")||"gold",tok=null,q=[],pos=null;self.readyState=0;' +
+  'var es=new EventSource("/sse?r="+encodeURIComponent(r));' +
+  'es.onmessage=function(e){var d=JSON.parse(e.data);if(d.t==="hello"){tok=d.c;self.readyState=1;if(self.onopen)self.onopen();return}if(self.onmessage)self.onmessage({data:e.data})};' +
+  'es.onerror=function(){self.readyState=0};' +
+  'self.send=function(d){var m=JSON.parse(d);if(m.t==="pos")pos=d;else q.push(d)};' +
+  'setInterval(function(){if(!tok||(!pos&&!q.length))return;var b="["+q.concat(pos?[pos]:[]).join(",")+"]";q=[];pos=null;fetch("/in?c="+tok,{method:"POST",body:b,keepalive:true}).catch(function(){})},80)}' +
+  'window.BGNet=N})();</script>';
+const page = () => fs.readFileSync(__dirname + '/index.html', 'utf8')
+  .replace('new Web' + 'Socket(', 'new BGNet(').replace('<script src="https://cdnjs', SHIM + '<script src="https://cdnjs');
+const toks = new Map();
 const rooms = new Map(), send = (ws, o) => ws.readyState === 1 && ws.send(JSON.stringify(o));
 const fr = x => x - Math.floor(x), hs = (x, z, s) => fr(Math.sin(x * 127.1 + z * 311.7 + s * 74.7) * 43758.5453);
 function noise(x, z, s) {
@@ -107,20 +112,40 @@ class Room {
   }
 }
 
-wss.on('connection', (ws, req) => {
-  const code = (new URL(req.url, 'http://x').searchParams.get('r') || 'gold').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) || 'gold';
-  let room = rooms.get(code); if (!room) { room = new Room(code); rooms.set(code, room); }
-  if (room.ps.size >= 8) return ws.close();
-  const pl = { id: room.nid++, ws, x: 10, z: 6, r: 0, last: 0 }; spawn(pl); room.ps.set(pl.id, pl);
-  ws.alive = true; ws.on('pong', () => { ws.alive = true; });
-  send(ws, room.world(pl));
-  ws.on('message', d => { let m; try { m = JSON.parse(d); } catch (e) { return; } room.msg(pl, m); });
-  ws.on('close', () => { room.ps.delete(pl.id); room.idle = Date.now(); });
+
+const srv = http.createServer((q, r) => {
+  const u = new URL(q.url, 'http://x');
+  if (u.pathname === '/healthz') return r.end('ok');
+  if (u.pathname === '/sse') {
+    const code = (u.searchParams.get('r') || 'gold').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) || 'gold';
+    let room = rooms.get(code); if (!room) { room = new Room(code); rooms.set(code, room); }
+    if (room.ps.size >= 8) { r.writeHead(503); return r.end(); }
+    r.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    const ws = { readyState: 1, send: s => { try { r.write('data: ' + s + '\n\n'); } catch (e) {} } };
+    const pl = { id: room.nid++, ws, x: 10, z: 6, r: 0, last: 0 }; spawn(pl); room.ps.set(pl.id, pl);
+    const tok = crypto.randomBytes(8).toString('hex'); toks.set(tok, { room, pl, res: r });
+    r.write('retry: 1500\n\n');
+    ws.send(JSON.stringify({ t: 'hello', c: tok }));
+    ws.send(JSON.stringify(room.world(pl)));
+    q.on('close', () => { ws.readyState = 0; room.ps.delete(pl.id); room.idle = Date.now(); toks.delete(tok); });
+    return;
+  }
+  if (u.pathname === '/in' && q.method === 'POST') {
+    const e = toks.get(u.searchParams.get('c')); let b = '';
+    q.on('data', d => { b += d; if (b.length > 1e5) q.destroy(); });
+    q.on('end', () => {
+      if (e) { try { for (const m of JSON.parse(b)) e.room.msg(e.pl, m); } catch (x) {} }
+      r.writeHead(e ? 204 : 410); r.end();
+    });
+    return;
+  }
+  r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+  r.end(page());
 });
 let last = Date.now();
 setInterval(() => {
   const n = Date.now(), dt = Math.min((n - last) / 1000, 0.2); last = n;
   for (const [c, r] of rooms) { if (!r.ps.size) { if (n - r.idle > 6e5) rooms.delete(c); continue; } r.tick(dt); }
 }, 66);
-setInterval(() => wss.clients.forEach(w => { if (!w.alive) return w.terminate(); w.alive = false; w.ping(); }), 25000);
+setInterval(() => { for (const e of toks.values()) { try { e.res.write(': ping\n\n'); } catch (x) {} } }, 15000);
 srv.listen(process.env.PORT || 3000, () => console.log('by gold train server up'));
