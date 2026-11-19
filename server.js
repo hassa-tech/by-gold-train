@@ -2,12 +2,12 @@
 const http = require('http'), fs = require('fs'), crypto = require('crypto');
 const W = 21, L = 80, SPEED = 0.4, HP = { 1: 3, 2: 4, 3: 5 }, KEY = { 1: 'w', 2: 's', 3: 'i' };
 // Small connection layer injected into the page: same interface the game already uses, carried over SSE + POST.
-const SHIM = '<script>(function(){function N(url){var self=this,r=new URL(url).searchParams.get("r")||"gold",tok=null,q=[],pos=null;self.readyState=0;' +
+const SHIM = '<script>(function(){function N(url){var self=this,r=new URL(url).searchParams.get("r")||"gold",tok=null,pend=null,sent="",lastT=0;self.readyState=0;' +
   'var es=new EventSource("/sse?r="+encodeURIComponent(r));' +
   'es.onmessage=function(e){var d=JSON.parse(e.data);if(d.t==="hello"){tok=d.c;self.readyState=1;if(self.onopen)self.onopen();return}if(self.onmessage)self.onmessage({data:e.data})};' +
   'es.onerror=function(){self.readyState=0};' +
-  'self.send=function(d){var m=JSON.parse(d);if(m.t==="pos")pos=d;else q.push(d)};' +
-  'setInterval(function(){if(!tok||(!pos&&!q.length))return;var b="["+q.concat(pos?[pos]:[]).join(",")+"]";q=[];pos=null;fetch("/in?c="+tok,{method:"POST",body:b,keepalive:true}).catch(function(){})},80)}' +
+  'self.send=function(d){pend=d};' +
+  'setInterval(function(){var n=Date.now();if(!tok||!pend||pend===sent||n-lastT<1800)return;sent=pend;lastT=n;fetch("/in?c="+tok,{method:"POST",body:"["+pend+"]",keepalive:true}).then(function(x){if(x.status===429)window.BGLIM=Date.now()}).catch(function(){})},150)}' +
   'window.BGNet=N})();</script>';
 const page = () => fs.readFileSync(__dirname + '/index.html', 'utf8')
   .replace('new Web' + 'Socket(', 'new BGNet(').replace('<script src="https://cdnjs', SHIM + '<script src="https://cdnjs');
@@ -89,8 +89,11 @@ class Room {
     }
   }
   msg(pl, m) {
-    if (m.t === 'pos') { pl.x = clamp(m.x, 0, W); pl.z = clamp(m.z, 0, L); pl.r = clamp(m.r, -7, 7); }
-    else if (m.t === 'act' && Date.now() - pl.last >= 300) { pl.last = Date.now(); this.act(pl); }
+    if (m.t === 'in') {
+      pl.x = clamp(m.x, 0, W); pl.z = clamp(m.z, 0, L); pl.r = clamp(m.r, -7, 7);
+      pl.vx = clamp(m.vx, -4, 4); pl.vz = clamp(m.vz, -4, 4); pl.c = (m.c | 0) & 3;
+      pl.hold = !!m.h; pl.hseen = Date.now();
+    }
   }
   world(pl) { return { t: 'world', lv: this.level, tiles: Array.from(this.t).join(''), path: this.path, st: this.st, you: [pl.x, pl.z] }; }
   bc(o) { for (const p of this.ps.values()) send(p.ws, o); }
@@ -110,9 +113,15 @@ class Room {
         for (const p of this.ps.values()) { spawn(p); send(p.ws, this.world(p)); }
       }
     }
+    const now = Date.now();
+    for (const p of this.ps.values()) {
+      if (now - p.hseen < 2400) { p.x = clamp(p.x + p.vx * dt, 0, W); p.z = clamp(p.z + p.vz * dt, 0, L); }
+      if (p.hold && now - p.hseen > 3500) p.hold = false;
+      if (p.hold && now - p.last >= 300) { p.last = now; this.act(p); }
+    }
     const c = { t: 's', p: +this.p.toFixed(2), v: this.speed, st: this.state, g: Math.ceil(Math.max(0, this.grace)), tm: Math.ceil(Math.max(0, this.timer)), k: this.stock,
-      pl: [...this.ps.values()].map(p => [p.id, +p.x.toFixed(2), +p.z.toFixed(2), +p.r.toFixed(2)]) };
-    for (const p of this.ps.values()) send(p.ws, { ...c, me: p.id, h: this.state === 'play' ? this.target(p) : null });
+      pl: [...this.ps.values()].map(p => [p.id, +p.x.toFixed(2), +p.z.toFixed(2), +p.r.toFixed(2), p.c]) };
+    for (const p of this.ps.values()) send(p.ws, { ...c, me: p.id });
   }
 }
 
@@ -126,9 +135,9 @@ const srv = http.createServer((q, r) => {
     if (room.ps.size >= 8) { r.writeHead(503); return r.end(); }
     r.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     const ws = { readyState: 1, send: s => { try { r.write('data: ' + s + '\n\n'); } catch (e) {} } };
-    const pl = { id: room.nid++, ws, x: 10, z: 6, r: 0, last: 0 }; spawn(pl); room.ps.set(pl.id, pl);
+    const pl = { id: room.nid++, ws, x: 10, z: 6, r: 0, vx: 0, vz: 0, c: 0, hold: false, hseen: 0, last: 0 }; spawn(pl); room.ps.set(pl.id, pl);
     const tok = crypto.randomBytes(8).toString('hex'); toks.set(tok, { room, pl, res: r });
-    r.write('retry: 1500\n\n');
+    r.write('retry: 5000\n\n');
     ws.send(JSON.stringify({ t: 'hello', c: tok }));
     ws.send(JSON.stringify(room.world(pl)));
     q.on('close', () => { ws.readyState = 0; room.ps.delete(pl.id); room.idle = Date.now(); toks.delete(tok); });
