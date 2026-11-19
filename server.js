@@ -1,6 +1,6 @@
 // by gold - train game server (plain HTTP + Server-Sent Events, no extra packages)
 const http = require('http'), fs = require('fs'), crypto = require('crypto');
-const W = 21, L = 80, SPEED = 0.6, HP = { 1: 3, 2: 4, 3: 5 }, KEY = { 1: 'w', 2: 's', 3: 'i' };
+const W = 21, L = 80, SPEED = 0.4, HP = { 1: 3, 2: 4, 3: 5 }, KEY = { 1: 'w', 2: 's', 3: 'i' };
 // Small connection layer injected into the page: same interface the game already uses, carried over SSE + POST.
 const SHIM = '<script>(function(){function N(url){var self=this,r=new URL(url).searchParams.get("r")||"gold",tok=null,q=[],pos=null;self.readyState=0;' +
   'var es=new EventSource("/sse?r="+encodeURIComponent(r));' +
@@ -20,7 +20,7 @@ function noise(x, z, s) {
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, +v || 0));
-const spawn = p => { p.x = 9.5 + Math.random() * 2; p.z = 5 + Math.random() * 2; };
+const spawn = p => { p.x = 9.8 + Math.random() * 1.4; p.z = 1.5 + Math.random() * 1.2; };
 
 class Room {
   constructor(code) { this.code = code; this.ps = new Map(); this.nid = 1; this.idle = Date.now(); this.reset(); }
@@ -34,12 +34,15 @@ class Room {
       else if (Math.random() < Math.max(0, Math.min(0.75, (f - 0.45) * 2.2)) + 0.03) v = 1;
       else if (g > 0.62 && Math.random() < 0.3) v = 2;
       else if (Math.random() < 0.035) v = 3;
-      if ((x >= 5 && x <= 15 && z < 16) || z >= 74) v = 0;
+      if ((x >= 5 && x <= 15 && z < 30) || z >= 74) v = 0;
       t[z * W + x] = v;
     }
     const sx = 6 + Math.floor(Math.random() * 9); t[77 * W + sx] = 6;
-    this.path = []; for (let z = 0; z < 16; z++) { this.path.push([10, z]); t[z * W + 10] = 5; }
-    this.t = t; this.hp = new Map(); this.p = 3; this.st = [sx, 77];
+    const put = (x, z, v) => { if (x !== 10) t[z * W + x] = v; };
+    for (const z of [8, 12, 16, 20, 24, 28]) { put(6, z, 1); put(14, z + 1, 1); put(8, z + 2, 1); }
+    put(7, 10, 3); put(13, 14, 3); put(7, 18, 3); put(13, 22, 3); put(6, 14, 2); put(14, 18, 2); put(6, 22, 2); put(14, 26, 3);
+    this.path = []; for (let z = 0; z < 30; z++) { this.path.push([10, z]); t[z * W + 10] = 5; }
+    this.t = t; this.hp = new Map(); this.p = 2; this.grace = 15; this.st = [sx, 77];
   }
   at(x, z) { return x < 0 || z < 0 || x >= W || z >= L ? 4 : this.t[z * W + x]; }
   posAt(q) {
@@ -93,7 +96,8 @@ class Room {
   bc(o) { for (const p of this.ps.values()) send(p.ws, o); }
   tick(dt) {
     if (this.state === 'play') {
-      this.p += this.speed * dt; const n = this.path.length;
+      if (this.grace > 0) this.grace -= dt; else this.p += this.speed * dt;
+      const n = this.path.length;
       if (this.p >= n - 1) {
         this.p = n - 1; const e = this.path[n - 1];
         if (this.t[e[1] * W + e[0]] === 6) { this.state = 'station'; this.timer = 5; } else { this.state = 'over'; this.timer = 8; }
@@ -106,7 +110,7 @@ class Room {
         for (const p of this.ps.values()) { spawn(p); send(p.ws, this.world(p)); }
       }
     }
-    const c = { t: 's', p: +this.p.toFixed(2), v: this.speed, st: this.state, tm: Math.ceil(Math.max(0, this.timer)), k: this.stock,
+    const c = { t: 's', p: +this.p.toFixed(2), v: this.speed, st: this.state, g: Math.ceil(Math.max(0, this.grace)), tm: Math.ceil(Math.max(0, this.timer)), k: this.stock,
       pl: [...this.ps.values()].map(p => [p.id, +p.x.toFixed(2), +p.z.toFixed(2), +p.r.toFixed(2)]) };
     for (const p of this.ps.values()) send(p.ws, { ...c, me: p.id, h: this.state === 'play' ? this.target(p) : null });
   }
