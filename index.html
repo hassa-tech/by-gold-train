@@ -3,112 +3,142 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>قطار الذهب – by gold</title>
 <style>
-:root{--coal:#15120f;--brass:#ffc83d;--fg:#f4efe6;--rust:#c2562b}
+:root{--coal:#15120f;--brass:#ffc83d;--fg:#f4efe6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--coal);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
 canvas{display:block;width:100%;height:100%;touch-action:none}
-#hud{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 0;pointer-events:none}
-#top{display:flex;gap:8px;flex-wrap:wrap}
-#top span{background:#15120fcc;border:1px solid #ffc83d55;border-radius:10px;padding:5px 10px;font-size:15px}
-#warn{margin-top:8px;font-size:15px;font-weight:700;text-shadow:0 1px 6px #000}
+#vg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 60%,#0000004d 100%)}
+#hud{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 6px) calc(env(safe-area-inset-right,0px) + 10px) 0 calc(env(safe-area-inset-left,0px) + 10px);pointer-events:none;display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+#top{display:flex;gap:6px;flex-wrap:wrap}
+#top span,.pill{background:#15120fcc;border:1px solid #ffc83d55;border-radius:10px;padding:4px 9px;font-size:14px;color:var(--fg)}
+#mid{flex:1;text-align:center;font-size:14px;font-weight:700;text-shadow:0 1px 6px #000;line-height:1.5}
 #warn.bad{color:#ff6a4a}
-#share{position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 50px);background:#15120fcc;color:var(--fg);border:1px solid #ffc83d55;border-radius:10px;padding:6px 12px;font-size:14px}
-#msg{position:fixed;top:32%;left:0;right:0;text-align:center;font-size:24px;font-weight:800;text-shadow:0 2px 10px #000;pointer-events:none;padding:0 20px}
-#by{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);color:var(--brass);font:italic 700 16px Georgia,serif;opacity:.9;pointer-events:none}
-#pad{position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:140px;height:140px;border-radius:50%;background:#ffffff18;border:2px solid #ffffff3a;touch-action:none;display:grid;place-items:center}
-#kn{width:56px;height:56px;border-radius:50%;background:var(--brass);opacity:.92}
-#act{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);width:112px;height:112px;border-radius:50%;border:3px solid var(--brass);background:#15120fd9;color:var(--fg);font-size:17px;font-weight:700;touch-action:none;opacity:.55}
+#tip{color:var(--brass)}
+#btns{display:flex;gap:6px;pointer-events:auto}
+#btns button{font:inherit;font-size:14px}
+#msg{position:fixed;top:36%;left:0;right:0;text-align:center;font-size:24px;font-weight:800;text-shadow:0 2px 10px #000;pointer-events:none;padding:0 20px}
+#by{position:fixed;left:50%;transform:translateX(-50%);bottom:6px;color:var(--brass);font:italic 700 15px Georgia,serif;opacity:.9;pointer-events:none}
+#pad{position:fixed;left:calc(env(safe-area-inset-left,0px) + 24px);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);width:124px;height:124px;border-radius:50%;background:#ffffff1c;border:2px solid #ffffff40;touch-action:none;display:grid;place-items:center}
+#kn{width:50px;height:50px;border-radius:50%;background:var(--brass);opacity:.92}
+#act{position:fixed;right:calc(env(safe-area-inset-right,0px) + 26px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px);width:108px;height:108px;border-radius:50%;border:3px solid var(--brass);background:#15120fd9;color:var(--fg);font-size:16px;font-weight:700;touch-action:none;opacity:.55}
 #act.on{background:var(--brass);color:#1a1409;opacity:1}
-.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;background:radial-gradient(ellipse at 50% 30%,#2b2118,var(--coal) 70%)}
-.ov h1{font-size:40px;margin:0;letter-spacing:-.5px}
-.g{color:var(--brass);font:italic 700 36px Georgia,serif}
-.ov p{margin:0;opacity:.8;max-width:310px;line-height:1.7}
-.ov input{background:#ffffff14;border:1px solid #ffc83d88;color:var(--fg);border-radius:12px;padding:12px;font-size:18px;text-align:center;width:200px;direction:ltr}
-.ov button{background:var(--brass);color:#1a1409;border:0;border-radius:14px;padding:14px 44px;font-size:20px;font-weight:800}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px;background:radial-gradient(ellipse at 50% 30%,#2b2118,var(--coal) 70%)}
+.ov h1{font-size:34px;margin:0}
+.g{color:var(--brass);font:italic 700 30px Georgia,serif}
+.ov p{margin:0;opacity:.8;max-width:420px;line-height:1.6;font-size:14px}
+.row{display:flex;gap:8px;align-items:center}
+.ov input{background:#ffffff14;border:1px solid #ffc83d88;color:var(--fg);border-radius:12px;padding:10px;font-size:18px;text-align:center;width:150px;direction:ltr}
+.ov button,.sm{background:var(--brass);color:#1a1409;border:0;border-radius:12px;padding:11px 26px;font-size:17px;font-weight:800}
+.sm{padding:10px 14px;font-size:15px;background:#3a2f1e;color:var(--fg);border:1px solid #ffc83d88}
 #desk{display:none}
+#rot{display:none;z-index:9;font-size:22px;font-weight:800}
+@media (orientation:portrait){#rot{display:flex}}
 </style></head><body>
-<canvas id="c"></canvas>
-<div id="hud"><div id="top"><span>🪵 <b id="kw">0</b></span><span>🪨 <b id="ks">0</b></span><span>⛓️ <b id="ki">0</b></span><span>🛤️ <b id="kr">0</b></span><span>🌍 <b id="lv">1</b></span><span>👥 <b id="np">1</b></span></div><div id="warn"></div></div>
-<button id="share">🔗 دعوة الأصدقاء</button>
+<canvas id="c"></canvas><div id="vg"></div>
+<div id="hud"><div id="top"><span>🪵 <b id="kw">0</b></span><span>🪨 <b id="ks">0</b></span><span>⛓️ <b id="ki">0</b></span><span>🛤️ <b id="kr">0</b></span><span>🌍 <b id="lv">1</b></span><span>👥 <b id="np">1</b></span></div>
+<div id="mid"><div id="warn"></div><div id="tip"></div></div>
+<div id="btns"><button id="code" class="sm">📋 <span id="rc"></span></button><button id="share" class="sm">🔗</button></div></div>
 <div id="msg"></div><div id="by">by gold</div>
 <div id="pad"><div id="kn"></div></div><button id="act">—</button>
 <div id="ttl" class="ov"><h1>قطار الذهب</h1><div class="g">by gold</div>
 <p>القطار لا يتوقف. اقطعوا الأشجار وكسّروا الحجر والحديد، اصنعوا السكك في العربة وضعوها أمامه قبل أن يصل لآخرها.</p>
-<input id="room" maxlength="12" autocomplete="off" aria-label="رمز الغرفة"><p id="rh">أعطوا أصدقاءك نفس رمز الغرفة ليلعبوا معك.</p><button id="go">ابدأ</button></div>
+<div class="row"><input id="room" maxlength="12" autocomplete="off" aria-label="رمز الغرفة"><button id="cpt" class="sm">📋 نسخ الكود</button></div>
+<p>أعطِ أصدقاءك نفس الكود ليدخلوا غرفتك.</p><button id="go">ابدأ</button></div>
 <div id="desk" class="ov"><h1>📱</h1><p>هذه اللعبة مخصصة للهاتف فقط. افتح الرابط من جوالك.</p><div class="g">by gold</div></div>
+<div id="rot" class="ov">🔄 قلّب هاتفك بالعرض</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const $=id=>document.getElementById(id),T=THREE;
 if(!(matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0)){$('desk').style.display='flex';$('ttl').style.display='none'}else main();
 function main(){
-const W=21,L=80;
-let tiles=new Uint8Array(W*L),path=[],stn=[10,77],ws=null,tries=0,room='gold',me=0,lv=1,ps=3,pc=3,started=false;
-let S={v:.6,st:'play',tm:0,k:{w:0,s:0,i:0,r:0},pl:[],h:null};
-const mine={x:10.5,z:6.5,r:0},foc=new T.Vector3(10.5,0,8);
+const W=21,L=80,PI2=Math.PI/2;
+let tiles=new Uint8Array(W*L),path=[],stn=[10,77],ws=null,tries=0,room='gold',me=0,lv=1,ps=2,pc=2,started=false,bad=0;
+let S={v:.4,st:'play',tm:0,g:0,k:{w:0,s:0,i:0,r:0},pl:[],h:null};
+const mine={x:10.5,z:2.5,r:0},foc=new T.Vector3(10.5,0,6);
 let jx=0,jy=0,acting=false,swing=0,tPos=0,tAct=0,hudT=0,smokeT=0;
 // ---------- renderer / scene ----------
-const ren=new T.WebGLRenderer({canvas:$('c'),antialias:true});ren.setPixelRatio(Math.min(devicePixelRatio,1.75));
-ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;ren.outputEncoding=T.sRGBEncoding;ren.toneMapping=T.ACESFilmicToneMapping;ren.toneMappingExposure=1.1;
-const sc=new T.Scene();sc.background=new T.Color(0xb7d3e4);sc.fog=new T.Fog(0xb7d3e4,20,52);
-const cam=new T.PerspectiveCamera(50,1,.1,80);
-sc.add(new T.HemisphereLight(0xd4ebff,0x5a4b3a,.95));
-const sun=new T.DirectionalLight(0xfff0d2,1.7);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
-const sh=sun.shadow.camera;sh.left=sh.bottom=-15;sh.right=sh.top=15;sh.near=1;sh.far=60;sun.shadow.bias=-.0006;sc.add(sun,sun.target);
+const ren=new T.WebGLRenderer({canvas:$('c'),antialias:true});ren.setPixelRatio(Math.min(devicePixelRatio,1.5));
+ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;ren.outputEncoding=T.sRGBEncoding;ren.toneMapping=T.ACESFilmicToneMapping;ren.toneMappingExposure=1.15;
+const sc=new T.Scene();sc.fog=new T.Fog(0xc4dbe8,26,62);
+const cam=new T.PerspectiveCamera(42,2,.1,90);
+sc.add(new T.HemisphereLight(0xcfe6ff,0x6b5a42,.85));
+const sun=new T.DirectionalLight(0xffe9c4,2);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+const sh=sun.shadow.camera;sh.left=sh.bottom=-24;sh.right=sh.top=24;sh.near=1;sh.far=70;sun.shadow.bias=-.0005;sun.shadow.normalBias=.03;sc.add(sun,sun.target);
 function ctex(fn,w=256,h=256){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.wrapS=t.wrapT=T.RepeatWrapping;return t}
-const gt=ctex((x,w,h)=>{x.fillStyle='#4d7a38';x.fillRect(0,0,w,h);for(let i=0;i<3500;i++){x.fillStyle=`hsl(${80+Math.random()*35},${35+Math.random()*25}%,${24+Math.random()*22}%)`;x.fillRect(Math.random()*w,Math.random()*h,2,4)}});
-gt.repeat.set((W+30)/2.5,(L+40)/2.5);gt.anisotropy=4;
-const ground=new T.Mesh(new T.PlaneGeometry(W+30,L+40),new T.MeshStandardMaterial({map:gt,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.set(W/2,0,L/2);ground.receiveShadow=true;sc.add(ground);
+const sky=new T.Mesh(new T.SphereGeometry(75,16,12),new T.MeshBasicMaterial({map:ctex((x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#3f7dc2');g.addColorStop(.5,'#8fbfe4');g.addColorStop(1,'#d6e6ee');x.fillStyle=g;x.fillRect(0,0,w,h)},8,256),side:T.BackSide,fog:false,depthWrite:false}));sc.add(sky);
+const gt=ctex((x,w,h)=>{x.fillStyle='#4d7a38';x.fillRect(0,0,w,h);for(let i=0;i<4500;i++){x.fillStyle=`hsl(${75+Math.random()*40},${35+Math.random()*30}%,${22+Math.random()*26}%)`;x.fillRect(Math.random()*w,Math.random()*h,2,4)}});
+gt.repeat.set((W+40)/2.5,(L+40)/2.5);gt.anisotropy=4;
+const ground=new T.Mesh(new T.PlaneGeometry(W+40,L+40),new T.MeshStandardMaterial({map:gt,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.set(W/2,0,L/2);ground.receiveShadow=true;sc.add(ground);
 const goldTex=ctex((x,w,h)=>{x.fillStyle='#2a1f14';x.fillRect(0,0,w,h);x.strokeStyle='#ffc83d';x.lineWidth=5;x.strokeRect(6,6,w-12,h-12);x.fillStyle='#ffc83d';x.font='italic bold 78px Georgia,serif';x.textAlign='center';x.textBaseline='middle';x.fillText('by gold',w/2,h/2+4)},512,128);
 goldTex.wrapS=goldTex.wrapT=T.ClampToEdgeWrapping;
 // ---------- instanced world ----------
 const N=W*L,dm=new T.Object3D(),col=new T.Color();
-const IM=(g,m,n)=>{const o=new T.InstancedMesh(g,m,n);o.castShadow=o.receiveShadow=true;o.count=0;o.frustumCulled=false;sc.add(o);return o};
+const IM=(g,m,n,cs)=>{const o=new T.InstancedMesh(g,m,n);o.castShadow=cs!==false;o.receiveShadow=true;o.count=0;o.frustumCulled=false;sc.add(o);return o};
 const std=(c,r=.9,m=0,f=false)=>new T.MeshStandardMaterial({color:c,roughness:r,metalness:m,flatShading:f});
-const trunk=IM(new T.CylinderGeometry(.09,.16,1,6).translate(0,.5,0),std(0x5b3a22),N);
-const fol=[0,1].map(k=>IM(new T.ConeGeometry(.58-k*.17,.95,7).translate(0,1.0+k*.6,0),std(0xffffff,.85),N));
+const trunk=IM(new T.CylinderGeometry(.09,.17,1.1,7).translate(0,.55,0),std(0x5b3a22),N);
+const fol=[0,1,2].map(k=>IM(new T.ConeGeometry(.62-k*.17,.95,8).translate(0,.9+k*.5,0),std(0xffffff,.85),N));
 const rock=IM(new T.DodecahedronGeometry(.42,0).translate(0,.2,0),std(0xffffff,.95,0,true),N);
-const iron=IM(new T.DodecahedronGeometry(.4,0).translate(0,.2,0),std(0xffffff,.45,.55,true),N);
-const water=IM(new T.BoxGeometry(1,.1,1).translate(0,-.03,0),new T.MeshStandardMaterial({color:0x2b6f9c,roughness:.12,metalness:.15}),N);
-water.castShadow=false;
-const sleep=IM(new T.BoxGeometry(.72,.06,.12),std(0x4a3320),1200),bars=IM(new T.BoxGeometry(.05,.07,1.02),std(0xb9bcc2,.35,.85),800);
+const ironM=std(0xffffff,.4,.6,true);ironM.emissive=new T.Color(0x4a1a00);ironM.emissiveIntensity=.9;
+const iron=IM(new T.DodecahedronGeometry(.4,0).translate(0,.2,0),ironM,N);
+const water=IM(new T.BoxGeometry(1,.1,1).translate(0,-.03,0),new T.MeshStandardMaterial({color:0x2b6f9c,roughness:.1,metalness:.2}),N,false);
+const tuft=IM(new T.ConeGeometry(.07,.3,4).translate(0,.15,0),std(0xffffff,1),500,false);
+const sleep=IM(new T.BoxGeometry(.72,.06,.12),std(0x4a3320),2000),bars=IM(new T.BoxGeometry(.05,.07,1.02),std(0xc3c6cc,.3,.9),2500),ball=IM(new T.BoxGeometry(.85,.05,1),std(0x7b756b,1),700,false);
 const hh=(x,z)=>{const s=Math.sin(x*12.9898+z*78.233)*43758.5453;return s-Math.floor(s)};
 function rebuild(){let a=0,b=0,c=0,d=0,e=0;
-for(let z=0;z<L;z++)for(let x=0;x<W;x++){const v=tiles[z*W+x];if(!v||v>4)continue;const r=hh(x,z),r2=hh(z,x+3);
+for(let z=0;z<L;z++)for(let x=0;x<W;x++){const v=tiles[z*W+x],r=hh(x,z),r2=hh(z,x+3);
 dm.position.set(x+.5+(r-.5)*.3,0,z+.5+(r2-.5)*.3);dm.rotation.set(0,r*6.28,0);
-if(v===1){const s=.8+r*.7;dm.scale.set(s,s*(.9+r2*.5),s);dm.updateMatrix();trunk.setMatrixAt(a,dm.matrix);fol[0].setMatrixAt(a,dm.matrix);fol[1].setMatrixAt(a,dm.matrix);
-col.setHSL(.26+r2*.08,.5,.2+r*.12);fol[0].setColorAt(a,col);fol[1].setColorAt(a,col);a++}
+if(v===0){if(r>.72&&e<500){dm.scale.set(1,.7+r2,1);dm.updateMatrix();tuft.setMatrixAt(e,dm.matrix);col.setHSL(.22+r2*.1,.5,.25+r*.15);tuft.setColorAt(e,col);e++}continue}
+if(v===1){const s=.8+r*.7;dm.scale.set(s,s*(.9+r2*.5),s);dm.updateMatrix();trunk.setMatrixAt(a,dm.matrix);fol.forEach(f=>f.setMatrixAt(a,dm.matrix));
+col.setHSL(.26+r2*.08,.5,.2+r*.12);fol.forEach(f=>f.setColorAt(a,col));a++}
 else if(v===2){const s=.8+r*.6;dm.scale.set(s,s*.8,s);dm.updateMatrix();rock.setMatrixAt(b,dm.matrix);col.setHSL(.08,.05,.38+r2*.15);rock.setColorAt(b,col);b++}
-else if(v===3){dm.scale.set(.9,.8,.9);dm.updateMatrix();iron.setMatrixAt(c,dm.matrix);col.setHSL(.05+r2*.04,.55,.32+r*.1);iron.setColorAt(c,col);c++}
-else{dm.position.set(x+.5,0,z+.5);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();water.setMatrixAt(d,dm.matrix);d++}}
+else if(v===3){dm.scale.set(.9,.85,.9);dm.updateMatrix();iron.setMatrixAt(c,dm.matrix);col.setHSL(.06+r2*.03,.45,.25+r*.08);iron.setColorAt(c,col);c++}
+else if(v===4){dm.position.set(x+.5,0,z+.5);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();water.setMatrixAt(d,dm.matrix);d++}}
 dm.scale.set(1,1,1);
-for(const [o,n] of [[trunk,a],[fol[0],a],[fol[1],a],[rock,b],[iron,c],[water,d]]){o.count=n;o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true}}
-function rails(){let a=0,b=0;
-for(let i=0;i<path.length-1;i++){const p=path[i],q=path[i+1],mx=(p[0]+q[0])/2+.5,mz=(p[1]+q[1])/2+.5,ry=q[0]!==p[0]?Math.PI/2:0;
-dm.rotation.set(0,ry,0);dm.scale.set(1,1,1);
-for(let k=-1;k<=1;k++){dm.position.set(mx+(ry?k*.3:0),.04,mz+(ry?0:k*.3));dm.updateMatrix();sleep.setMatrixAt(a++,dm.matrix)}
-for(const s of[-1,1]){dm.position.set(mx+(ry?0:s*.2),.1,mz+(ry?s*.2:0));dm.updateMatrix();bars.setMatrixAt(b++,dm.matrix)}}
-sleep.count=a;bars.count=b;sleep.instanceMatrix.needsUpdate=bars.instanceMatrix.needsUpdate=true}
+for(const [o,n] of [[trunk,a],[fol[0],a],[fol[1],a],[fol[2],a],[rock,b],[iron,c],[water,d],[tuft,e]]){o.count=n;o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true}}
+function rails(){let a=0,b=0,g=0;const n=path.length;
+for(let i=0;i<n;i++){const c=path[i],p=path[Math.max(i-1,0)],q=path[Math.min(i+1,n-1)];
+let ix=c[0]-p[0],iz=c[1]-p[1],ox=q[0]-c[0],oz=q[1]-c[1];if(i===0){ix=ox;iz=oz}if(i===n-1){ox=ix;oz=iz}
+const cx=c[0]+.5,cz=c[1]+.5;
+if(ix===ox&&iz===oz){const ry=ix?PI2:0;dm.rotation.set(0,ry,0);dm.scale.set(1,1,1);
+dm.position.set(cx,.025,cz);dm.updateMatrix();ball.setMatrixAt(g++,dm.matrix);
+for(let k=-1;k<=1;k++){dm.position.set(cx+ix*k*.3,.07,cz+iz*k*.3);dm.updateMatrix();sleep.setMatrixAt(a++,dm.matrix)}
+for(const s of[-1,1]){dm.position.set(cx+s*.2*Math.abs(iz),.13,cz+s*.2*Math.abs(ix));dm.updateMatrix();bars.setMatrixAt(b++,dm.matrix)}}
+else{const kx=cx+(-ix+ox)*.5,kz=cz+(-iz+oz)*.5,D=Math.PI/8;
+const at=(r,f)=>[kx+r*(-ox*Math.cos(f)+ix*Math.sin(f)),kz+r*(-oz*Math.cos(f)+iz*Math.sin(f))],hd=f=>Math.atan2(ox*Math.sin(f)+ix*Math.cos(f),oz*Math.sin(f)+iz*Math.cos(f));
+for(let m=0;m<4;m++){const f=(m+.5)*D,ry=hd(f);dm.rotation.set(0,ry,0);
+let P=at(.5,f);dm.position.set(P[0],.025,P[1]);dm.scale.set(1,1,.45);dm.updateMatrix();ball.setMatrixAt(g++,dm.matrix);
+for(const r of[.3,.7]){P=at(r,f);dm.position.set(P[0],.13,P[1]);dm.scale.set(1,1,r*D*1.1/1.02);dm.updateMatrix();bars.setMatrixAt(b++,dm.matrix)}
+if(m<3){const f2=(m+1)*D;P=at(.5,f2);dm.rotation.set(0,hd(f2),0);dm.position.set(P[0],.07,P[1]);dm.scale.set(1,1,1);dm.updateMatrix();sleep.setMatrixAt(a++,dm.matrix)}}}}
+dm.scale.set(1,1,1);sleep.count=a;bars.count=b;ball.count=g;for(const o of[sleep,bars,ball])o.instanceMatrix.needsUpdate=true}
 let stg=null;const paintR=std(0x8a1c1c,.45,.3),steel=std(0x23262b,.4,.7),wood=std(0x7a5230,.8);
 function station(){if(stg)sc.remove(stg);stg=new T.Group();const x=stn[0]+.5,z=stn[1]+.5,add=(g,m,px,py,pz)=>{const o=new T.Mesh(g,m);o.position.set(px,py,pz);o.castShadow=o.receiveShadow=true;stg.add(o);return o};
 add(new T.BoxGeometry(1,.05,1),std(0xffc83d,.3,.6),x,.04,z);
 add(new T.BoxGeometry(2.4,.3,6),std(0x9a958c),x+2,.15,z);add(new T.BoxGeometry(2.9,.12,6.4),paintR,x+2,2.1,z);
 for(const dz of[-2.8,2.8])add(new T.BoxGeometry(.12,1.9,.12),steel,x+2.9,1.1,z+dz);
-const sg=new T.Mesh(new T.PlaneGeometry(2.4,.6),new T.MeshBasicMaterial({map:goldTex}));sg.position.set(x+.77,1.5,z);sg.rotation.y=-Math.PI/2;stg.add(sg);sc.add(stg)}
+const sg=new T.Mesh(new T.PlaneGeometry(2.4,.6),new T.MeshBasicMaterial({map:goldTex}));sg.position.set(x+.77,1.5,z);sg.rotation.y=-PI2;stg.add(sg);sc.add(stg)}
 // ---------- train ----------
 function car(kind){const g=new T.Group(),add=(geo,m,x,y,z,rx,rz)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;if(rz)o.rotation.z=rz;o.castShadow=true;g.add(o);return o};
 add(new T.BoxGeometry(.7,.12,1.0),steel,0,.28,0);
-for(const sx of[-.3,.3])for(const sz of[-.3,.3])add(new T.CylinderGeometry(.16,.16,.08,14),steel,sx,.16,sz,0,Math.PI/2);
-if(kind==='loco'){add(new T.CylinderGeometry(.27,.27,.95,16),paintR,0,.62,.12,Math.PI/2);add(new T.CylinderGeometry(.08,.11,.34,10),steel,0,1.0,.4);
+for(const sx of[-.3,.3])for(const sz of[-.3,.3])add(new T.CylinderGeometry(.16,.16,.08,14),steel,sx,.16,sz,0,PI2);
+if(kind==='loco'){add(new T.CylinderGeometry(.27,.27,.95,16),paintR,0,.62,.12,PI2);add(new T.CylinderGeometry(.08,.11,.34,10),steel,0,1.0,.4);
+for(const z of[-.15,.2,.45])add(new T.CylinderGeometry(.285,.285,.04,16),std(0xffc83d,.3,.7),0,.62,z,PI2);
+add(new T.SphereGeometry(.12,10,8),std(0xffc83d,.3,.7),0,.9,.05);
 add(new T.BoxGeometry(.64,.58,.42),paintR,0,.74,-.36);add(new T.BoxGeometry(.74,.06,.52),steel,0,1.06,-.36);
-add(new T.CylinderGeometry(.28,.28,.05,16),std(0xffc83d,.3,.7),0,.62,.62,Math.PI/2);add(new T.BoxGeometry(.3,.12,.2),steel,0,.26,.6)}
+add(new T.CylinderGeometry(.28,.28,.05,16),std(0xffc83d,.3,.7),0,.62,.62,PI2);add(new T.BoxGeometry(.3,.12,.2),steel,0,.26,.6);
+const l=add(new T.SphereGeometry(.06,8,6),new T.MeshBasicMaterial({color:0xfff3b0}),0,.62,.68)}
 else if(kind==='tender'){add(new T.BoxGeometry(.66,.34,.72),wood,0,.5,0);add(new T.SphereGeometry(.26,8,6),std(0x111111,.9),0,.7,0)}
 else{add(new T.BoxGeometry(.7,.42,.98),wood,0,.52,0);add(new T.BoxGeometry(.34,.3,.34),std(0x946a3a),0,.88,.1);
-for(const s of[-1,1]){const p=new T.Mesh(new T.PlaneGeometry(.78,.2),new T.MeshBasicMaterial({map:goldTex}));p.position.set(s*.355,.55,0);p.rotation.y=s*Math.PI/2;g.add(p)}}
+for(const s of[-1,1]){const p=new T.Mesh(new T.PlaneGeometry(.78,.2),new T.MeshBasicMaterial({map:goldTex}));p.position.set(s*.355,.55,0);p.rotation.y=s*PI2;g.add(p)}}
 g.traverse(o=>{if(o.isMesh)o.receiveShadow=true});sc.add(g);return g}
 const loco=car('loco'),tender=car('tender'),craft=car('craft');
-function posAt(q){const n=path.length;if(n<2)return{x:10.5,z:q+.5};let i=Math.floor(q),f=q-i;if(q<0){i=0;f=q}if(i>=n-1){i=n-2;f=1}const a=path[i],b=path[i+1];return{x:a[0]+.5+(b[0]-a[0])*f,z:a[1]+.5+(b[1]-a[1])*f}}
-function place(g,q){const a=posAt(q+.3),b=posAt(q-.3);g.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);g.rotation.y=Math.atan2(a.x-b.x,a.z-b.z)}
-// smoke
+function posAt(q){const n=path.length;if(n<2)return{x:10.5,z:q+.5};
+let i=Math.floor(q+.5),f=q+.5-i;if(i<0){i=0;f=q+.5}if(i>n-1){i=n-1;f=.5}
+const c=path[i],p=path[Math.max(i-1,0)],nx=path[Math.min(i+1,n-1)];
+let ix=c[0]-p[0],iz=c[1]-p[1],ox=nx[0]-c[0],oz=nx[1]-c[1];if(i===0){ix=ox;iz=oz}if(i===n-1){ox=ix;oz=iz}
+const cx=c[0]+.5,cz=c[1]+.5;if(ix===ox&&iz===oz)return{x:cx+ix*(f-.5),z:cz+iz*(f-.5)};
+const kx=cx+(-ix+ox)*.5,kz=cz+(-iz+oz)*.5,th=f*PI2;
+return{x:kx+.5*(-ox*Math.cos(th)+ix*Math.sin(th)),z:kz+.5*(-oz*Math.cos(th)+iz*Math.sin(th))}}
+function place(g,q){const a=posAt(q+.15),b=posAt(q-.15);g.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);g.rotation.y=Math.atan2(a.x-b.x,a.z-b.z)}
 const smoke=[],sm=new T.MeshBasicMaterial({color:0xdddddd,transparent:true,opacity:.5,depthWrite:false});
 for(let i=0;i<14;i++){const m=new T.Mesh(new T.SphereGeometry(.16,8,6),sm.clone());m.visible=false;m.userData.t=9;sc.add(m);smoke.push(m)}
 // ---------- players ----------
@@ -122,13 +152,13 @@ function connect(){ws=new WebSocket((location.protocol==='https:'?'wss://':'ws:/
 ws.onopen=()=>{tries=0};ws.onmessage=e=>onmsg(JSON.parse(e.data));ws.onclose=()=>{if(started)setTimeout(connect,Math.min(4000,400*++tries))}}
 const tx=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
 function onmsg(m){
-if(m.t==='world'){lv=m.lv;tiles=Uint8Array.from(m.tiles,Number);path=m.path;stn=m.st;mine.x=m.you[0];mine.z=m.you[1];ps=pc=3;rebuild();rails();station()}
+if(m.t==='world'){lv=m.lv;tiles=Uint8Array.from(m.tiles,Number);path=m.path;stn=m.st;mine.x=m.you[0];mine.z=m.you[1];ps=pc=2;rebuild();rails();station()}
 else if(m.t==='tile'){tiles[m.z*W+m.x]=m.v;rebuild()}
 else if(m.t==='rail'){if(tiles[m.z*W+m.x]===0)tiles[m.z*W+m.x]=5;path.push([m.x,m.z]);rails()}
 else if(m.t==='s'){S=m;me=m.me;ps=m.p}}
 // ---------- input ----------
 const pad=$('pad'),kn=$('kn'),act=$('act');
-function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/50,dy=(e.clientY-r.top-r.height/2)/50;const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}jx=dx;jy=dy;kn.style.transform=`translate(${dx*40}px,${dy*40}px)`}
+function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/46,dy=(e.clientY-r.top-r.height/2)/46;const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}jx=dx;jy=dy;kn.style.transform=`translate(${dx*36}px,${dy*36}px)`}
 pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);jm(e)});
 pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))jm(e)});
 const pup=()=>{jx=jy=0;kn.style.transform=''};pad.addEventListener('pointerup',pup);pad.addEventListener('pointercancel',pup);
@@ -140,47 +170,50 @@ const ok=(x,z)=>!solid(x-.2,z-.2)&&!solid(x+.2,z-.2)&&!solid(x-.2,z+.2)&&!solid(
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.1);last=now;if(started)step(dt);draw(dt)}
 function step(dt){
-const dx=-jx*3.2*dt,dz=-jy*3.2*dt;
+const dx=-jy*3.4*dt,dz=jx*3.4*dt;
 if(S.st==='play'||S.st==='station'){if(dx||dz){if(ok(mine.x+dx,mine.z))mine.x+=dx;if(ok(mine.x,mine.z+dz))mine.z+=dz;mine.r=Math.atan2(dx,dz)}}
 tPos+=dt;if(tPos>.066){tPos=0;tx({t:'pos',x:+mine.x.toFixed(2),z:+mine.z.toFixed(2),r:+mine.r.toFixed(2)})}
 tAct-=dt;if(acting&&tAct<=0){tAct=.15;tx({t:'act'});if(S.h)swing=.3}
-if(S.st==='play')ps+=S.v*dt;pc+=(ps-pc)*Math.min(1,dt*6);
+if(S.st==='play'&&!S.g)ps+=S.v*dt;pc+=(ps-pc)*Math.min(1,dt*6);
 hudT+=dt;if(hudT>.2){hudT=0;hud()}}
 function hud(){if(!path.length)return;const k=S.k;$('kw').textContent=k.w;$('ks').textContent=k.s;$('ki').textContent=k.i;$('kr').textContent=k.r;$('lv').textContent=lv;$('np').textContent=S.pl.length;
-const left=Math.max(0,path.length-1-pc),w=$('warn'),gap=stn[1]-path[path.length-1][1];
-w.textContent='سكك أمام القطار: '+Math.floor(left)+'  ·  باقي للمحطة: '+gap;w.className=left<6?'bad':'';
+const left=Math.max(0,path.length-1-pc),w=$('warn'),gap=stn[1]-path[path.length-1][1],sp=S.pl.find(p=>p[0]===me);
+if(sp&&Math.hypot(sp[1]-mine.x,sp[2]-mine.z)>2)bad++;else bad=0;
+w.textContent=bad>10?'⚠️ حركتك لا تصل للسيرفر':'سكك أمام القطار: '+Math.floor(left)+'  ·  باقي للمحطة: '+gap;w.className=left<6||bad>10?'bad':'';
+let tp='';if(S.g>0)tp='القطار يتحرك بعد '+S.g+' ث: اجمعوا الموارد!';else if(k.r>0)tp='ضع السكك عند آخر سكة (اقترب منها)';else if(k.w>0&&k.i>0)tp='اقترب من العربة المكتوب عليها by gold ثم اضغط اصنع';else if(k.w===0)tp='اقطع شجرة 🪓 (اقترب منها واضغط)';else tp='كسّر الحجر الداكن البرتقالي ⛏️ للحديد';
+$('tip').textContent=tp;
 const h=S.h;let t='—';if(h){if(h.k==='hit')t=tiles[h.z*W+h.x]===1?'اقطع 🪓':'كسّر ⛏️';else if(h.k==='craft')t='اصنع 🛤️';else t='ضع سكة'}
 act.textContent=t;act.className=h?'on':'';
 $('msg').textContent=S.st==='over'?'خسرتم! القطار وصل لآخر سكة. إعادة بعد '+S.tm:S.st==='station'?'وصلتم المحطة! عالم جديد بعد '+S.tm:''}
 function draw(dt){
 place(loco,pc);place(tender,pc-1.1);place(craft,pc-2.2);
-// players
 const seen={};for(const p of S.pl){const id=p[0];seen[id]=1;const m=PM[id]||(PM[id]=pmesh(id)),self=id===me,k=Math.min(1,dt*12);
 const tx=self?mine.x:p[1],tz=self?mine.z:p[2],mv=Math.hypot(tx-m.position.x,tz-m.position.z);
-m.position.x+=(tx-m.position.x)*k;m.position.z+=(tz-m.position.z)*k;m.position.y=Math.abs(Math.sin(now2()*9))*Math.min(.08,mv*2);
+m.position.x+=(tx-m.position.x)*k;m.position.z+=(tz-m.position.z)*k;m.position.y=Math.abs(Math.sin(performance.now()/110))*Math.min(.08,mv*2);
 const r=self?mine.r:p[3];m.rotation.y+=Math.atan2(Math.sin(r-m.rotation.y),Math.cos(r-m.rotation.y))*Math.min(1,dt*10);
-const tl=m.userData.tool;tl.rotation.x=self&&swing>0?-Math.sin(swing*Math.PI/.3)*1.4:0}
+m.userData.tool.rotation.x=self&&swing>0?-Math.sin(swing*Math.PI/.3)*1.4:0}
 for(const k in PM)if(!seen[k]){sc.remove(PM[k]);delete PM[k]}
 if(swing>0)swing-=dt;
-// target marker
-const h=S.h;if(h&&S.st==='play'){mark.visible=true;const gx=h.k==='hit'?h.x:h.k==='rail'?h.gx:null,gz=h.k==='hit'?h.z:h.gz;
-if(gx==null)mark.visible=false;else{mark.position.set(gx+.5,.06,gz+.5);mark.material.color.set(h.k==='hit'?0xffffff:0xffc83d)}}else mark.visible=false;
-// smoke
+const h=S.h;mark.visible=false;if(h&&S.st==='play'){const gx=h.k==='hit'?h.x:h.k==='rail'?h.gx:null;if(gx!=null){mark.visible=true;mark.position.set(gx+.5,.06,(h.k==='hit'?h.z:h.gz)+.5);mark.material.color.set(h.k==='hit'?0xffffff:0xffc83d)}}
 smokeT-=dt;if(smokeT<=0&&started){smokeT=.16;const m=smoke.find(s=>s.userData.t>=2);if(m){const v=new T.Vector3(0,1.15,.4);loco.localToWorld(v);m.position.copy(v);m.userData.t=0;m.scale.setScalar(.6);m.visible=true}}
 for(const m of smoke){if(!m.visible)continue;m.userData.t+=dt;const u=m.userData.t/2;if(u>=1){m.visible=false;continue}m.position.y+=dt*.55;m.position.x+=dt*.1;m.scale.setScalar(.6+u*1.8);m.material.opacity=.5*(1-u)}
-// camera + sun
-const fx=mine.x,fz=mine.z;foc.x+=(fx-foc.x)*Math.min(1,dt*5);foc.z+=(fz-foc.z)*Math.min(1,dt*5);
-cam.position.set(foc.x,10.5,foc.z-7.6);cam.lookAt(foc.x,0,foc.z+1.4);
-sun.position.set(foc.x-9,20,foc.z-5);sun.target.position.set(foc.x,0,foc.z);
+// side camera: sees the whole scene ahead
+const k=Math.min(1,dt*4),fz=(mine.z*2+posAt(pc).z)/3+2;foc.x+=(mine.x-foc.x)*k;foc.z+=(fz-foc.z)*k;
+cam.position.set(foc.x-14,12,foc.z);cam.lookAt(foc.x,0,foc.z);sky.position.copy(cam.position);
+sun.position.set(foc.x-9,22,foc.z-7);sun.target.position.set(foc.x,0,foc.z);
 ren.render(sc,cam)}
-const now2=()=>performance.now()/1000;
 function size(){ren.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',size);size();requestAnimationFrame(loop);
-// ---------- start / share ----------
+// ---------- start / share / copy ----------
+function cp(t,btn){const o=btn.innerHTML,ok=()=>{btn.textContent='✓ تم النسخ';setTimeout(()=>btn.innerHTML=o,1400)};
+(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(ok).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){}a.remove()})}
 const q=new URLSearchParams(location.search).get('r');
 $('room').value=q||Math.random().toString(36).slice(2,6);
-$('go').onclick=()=>{room=($('room').value||'gold').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12)||'gold';
-history.replaceState(null,'','?r='+room);$('ttl').style.display='none';started=true;connect()};
-$('share').onclick=()=>{const u=location.origin+'/?r='+room;if(navigator.share)navigator.share({title:'قطار الذهب – by gold',url:u}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(u)};
+const clean=()=>($('room').value||'gold').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12)||'gold';
+$('cpt').onclick=()=>cp(clean(),$('cpt'));
+$('go').onclick=()=>{room=clean();$('rc').textContent=room;history.replaceState(null,'','?r='+room);$('ttl').style.display='none';started=true;connect();
+try{const de=document.documentElement;(de.requestFullscreen?de.requestFullscreen():Promise.reject()).then(()=>screen.orientation.lock('landscape')).catch(()=>{})}catch(e){}};
+$('code').onclick=()=>cp(room,$('code'));
+$('share').onclick=()=>{const u=location.origin+'/?r='+room;if(navigator.share)navigator.share({title:'قطار الذهب – by gold',url:u}).catch(()=>{});else cp(u,$('share'))};
 }
 </script></body></html>
