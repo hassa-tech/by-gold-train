@@ -2,12 +2,13 @@
 const http = require('http'), fs = require('fs'), crypto = require('crypto');
 const W = 21, L = 80, SPEED = 0.4, HP = { 1: 3, 2: 4, 3: 5 }, KEY = { 1: 'w', 2: 's', 3: 'i' };
 // Small connection layer injected into the page: same interface the game already uses, carried over SSE + POST.
-const SHIM = '<script>(function(){function N(url){var self=this,r=new URL(url).searchParams.get("r")||"gold",tok=null,pend=null,sent="",lastT=0;self.readyState=0;' +
+const SHIM = '<script>(function(){function N(url){var self=this,r=new URL(url).searchParams.get("r")||"gold",tok=null,pend=null,sent="",ev=[],lastT=0;self.readyState=0;' +
   'var es=new EventSource("/sse?r="+encodeURIComponent(r));' +
   'es.onmessage=function(e){var d=JSON.parse(e.data);if(d.t==="hello"){tok=d.c;self.readyState=1;if(self.onopen)self.onopen();return}if(self.onmessage)self.onmessage({data:e.data})};' +
   'es.onerror=function(){self.readyState=0};' +
-  'self.send=function(d){pend=d};' +
-  'setInterval(function(){var n=Date.now();if(!tok||!pend||pend===sent||n-lastT<1800)return;sent=pend;lastT=n;fetch("/in?c="+tok,{method:"POST",body:"["+pend+"]",keepalive:true}).then(function(x){if(x.status===429)window.BGLIM=Date.now()}).catch(function(){})},150)}' +
+  'self.send=function(d){if(d.indexOf(\'"act"\')>0)ev.push(d);else pend=d};' +
+  'setInterval(function(){var n=Date.now();if(!tok)return;var hs=pend&&pend!==sent;if(!((ev.length&&n-lastT>=600)||(hs&&n-lastT>=1800)))return;var a=ev;ev=[];if(pend){a.push(pend);sent=pend}lastT=n;' +
+  'fetch("/in?c="+tok,{method:"POST",body:"["+a.join(",")+"]",keepalive:true}).then(function(x){if(x.status===429)window.BGLIM=Date.now()}).catch(function(){})},100)}' +
   'window.BGNet=N})();</script>';
 const page = () => fs.readFileSync(__dirname + '/index.html', 'utf8')
   .replace('new Web' + 'Socket(', 'new BGNet(').replace('<script src="https://cdnjs', SHIM + '<script src="https://cdnjs');
@@ -51,14 +52,14 @@ class Room {
     const a = this.path[i], b = this.path[i + 1];
     return { x: a[0] + 0.5 + (b[0] - a[0]) * f, z: a[1] + 0.5 + (b[1] - a[1]) * f };
   }
-  cand(px, pz) {
+  cand(px, pz, r) {
     const n = this.path.length, e = this.path[n - 1], pr = this.path[n - 2], dx = e[0] - pr[0], dz = e[1] - pr[1];
-    let best = null, bd = 1e9;
-    for (const [ax, az] of [[dx, dz], [dz, -dx], [-dz, dx]]) {
+    const fx = Math.sin(r), fz = Math.cos(r); let best = null, bs = -9;
+    [[dx, dz, 0.15], [dz, -dx, 0], [-dz, dx, 0]].forEach(([ax, az, bonus]) => {
       const x = e[0] + ax, z = e[1] + az, v = this.at(x, z);
-      if (v !== 0 && v !== 6) continue;
-      const d = Math.hypot(x + 0.5 - px, z + 0.5 - pz); if (d < bd) { bd = d; best = [x, z]; }
-    }
+      if (v !== 0 && v !== 6) return;
+      const sc = ax * fx + az * fz + bonus; if (sc > bs) { bs = sc; best = [x, z]; }
+    });
     return best;
   }
   target(pl) {
@@ -71,13 +72,13 @@ class Room {
     if (s.w > 0 && s.i > 0) { const d = Math.hypot(wg.x - px, wg.z - pz) / 3; if (d < 1 && d < bs) { bs = d; best = { k: 'craft' }; } }
     if (s.r > 0) {
       const e = this.path[this.path.length - 1], d = Math.hypot(e[0] + 0.5 - px, e[1] + 0.5 - pz) / 3;
-      if (d < 1 && d < bs) { const g = this.cand(px, pz); if (g) { bs = d; best = { k: 'rail', gx: g[0], gz: g[1] }; } }
+      if (d < 1 && d < bs) { const g = this.cand(px, pz, pl.r); if (g) { bs = d; best = { k: 'rail', gx: g[0], gz: g[1] }; } }
     }
     return best;
   }
   act(pl) {
-    if (this.state !== 'play') return;
-    const t = this.target(pl); if (!t) return;
+    if (this.state !== 'play') return false;
+    const t = this.target(pl); if (!t) return false;
     if (t.k === 'hit') {
       const i = t.z * W + t.x, v = this.t[i], h = (this.hp.get(i) ?? HP[v]) - 1;
       if (h <= 0) { this.t[i] = 0; this.hp.delete(i); this.stock[KEY[v]]++; this.bc({ t: 'tile', x: t.x, z: t.z, v: 0 }); }
@@ -87,12 +88,15 @@ class Room {
       this.stock.r--; const i = t.gz * W + t.gx; if (this.t[i] === 0) this.t[i] = 5;
       this.path.push([t.gx, t.gz]); this.bc({ t: 'rail', x: t.gx, z: t.gz });
     }
+    return t.k;
   }
   msg(pl, m) {
     if (m.t === 'in') {
       pl.x = clamp(m.x, 0, W); pl.z = clamp(m.z, 0, L); pl.r = clamp(m.r, -7, 7);
       pl.vx = clamp(m.vx, -4, 4); pl.vz = clamp(m.vz, -4, 4); pl.c = (m.c | 0) & 3;
-      pl.hold = !!m.h; pl.hseen = Date.now();
+      pl.hseen = Date.now();
+    } else if (m.t === 'act') {
+      pl.x = clamp(m.x, 0, W); pl.z = clamp(m.z, 0, L); pl.r = clamp(m.r, -7, 7); pl.vx = 0; pl.vz = 0; pl.hseen = 0; pl.burst = 6;
     }
   }
   world(pl) { return { t: 'world', lv: this.level, tiles: Array.from(this.t).join(''), path: this.path, st: this.st, you: [pl.x, pl.z] }; }
@@ -116,8 +120,7 @@ class Room {
     const now = Date.now();
     for (const p of this.ps.values()) {
       if (now - p.hseen < 2400) { p.x = clamp(p.x + p.vx * dt, 0, W); p.z = clamp(p.z + p.vz * dt, 0, L); }
-      if (p.hold && now - p.hseen > 3500) p.hold = false;
-      if (p.hold && now - p.last >= 300) { p.last = now; this.act(p); }
+      if (p.burst > 0 && now - p.last >= 280) { p.last = now; p.burst--; const k = this.act(p); if (!k || k === 'rail') p.burst = 0; }
     }
     const c = { t: 's', p: +this.p.toFixed(2), v: this.speed, st: this.state, g: Math.ceil(Math.max(0, this.grace)), tm: Math.ceil(Math.max(0, this.timer)), k: this.stock,
       pl: [...this.ps.values()].map(p => [p.id, +p.x.toFixed(2), +p.z.toFixed(2), +p.r.toFixed(2), p.c]) };
@@ -135,7 +138,7 @@ const srv = http.createServer((q, r) => {
     if (room.ps.size >= 8) { r.writeHead(503); return r.end(); }
     r.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     const ws = { readyState: 1, send: s => { try { r.write('data: ' + s + '\n\n'); } catch (e) {} } };
-    const pl = { id: room.nid++, ws, x: 10, z: 6, r: 0, vx: 0, vz: 0, c: 0, hold: false, hseen: 0, last: 0 }; spawn(pl); room.ps.set(pl.id, pl);
+    const pl = { id: room.nid++, ws, x: 10, z: 6, r: 0, vx: 0, vz: 0, c: 0, burst: 0, hseen: 0, last: 0 }; spawn(pl); room.ps.set(pl.id, pl);
     const tok = crypto.randomBytes(8).toString('hex'); toks.set(tok, { room, pl, res: r });
     r.write('retry: 5000\n\n');
     ws.send(JSON.stringify({ t: 'hello', c: tok }));
