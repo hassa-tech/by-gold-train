@@ -36,18 +36,29 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .ov button.ch.on{background:var(--brass);color:#1a1409}
 #rot{display:none;z-index:9;font-size:22px;font-weight:800}
 @media (orientation:portrait){#rot{display:flex}}
+@media (orientation:landscape) and (max-height:560px){
+.ov{justify-content:flex-start;overflow-y:auto;gap:6px;padding:8px 12px}
+.ov>:first-child{margin-top:auto}.ov>:last-child{margin-bottom:auto}
+.ov h1{font-size:24px}.g{font-size:20px}
+#ttl p.d{display:none}
+.ov p{font-size:12px}
+.ov button{padding:8px 26px;font-size:16px}
+.ov button.sm{padding:7px 12px;font-size:14px}
+.ov button.ch{padding:6px 9px;font-size:13px}
+.ov input{padding:7px;font-size:16px}
+}
 </style></head><body>
 <canvas id="c"></canvas><div id="vg"></div>
 <div id="hud"><div id="top"><span>🪵 <b id="kw">0</b></span><span>🪨 <b id="ks">0</b></span><span>⛓️ <b id="ki">0</b></span><span>🛤️ <b id="kr">0</b></span><span>🌍 <b id="lv">1</b></span><span>👥 <b id="np">1</b></span></div>
 <div id="mid"><div id="warn"></div><div id="tip"></div></div>
 <div id="btns"><button id="code" class="sm">📋 <span id="rc"></span></button><button id="share" class="sm">🔗</button></div></div>
-<div id="msg"></div><div id="by">by gold</div><div id="ver">النسخة 4</div>
+<div id="msg"></div><div id="by">by gold</div><div id="ver">النسخة 5</div>
 <div id="pad"><div id="kn"></div></div><button id="act">—</button>
 <div id="ttl" class="ov"><h1>قطار الذهب</h1><div class="g">by gold</div>
-<p>القطار لا يتوقف. اقطعوا الأشجار وكسّروا الحجر والحديد، اصنعوا السكك في العربة وضعوها أمامه قبل أن يصل لآخرها.</p>
+<p class="d">القطار لا يتوقف. اقطعوا الأشجار وكسّروا الحجر والحديد، اصنعوا السكك في العربة وضعوها أمامه قبل أن يصل لآخرها.</p>
 <div class="row" id="chs"></div>
 <div class="row"><input id="room" maxlength="12" autocomplete="off" aria-label="رمز الغرفة"><button id="cpt" class="sm">📋 نسخ الكود</button></div>
-<p>أعطِ أصدقاءك نفس الكود ليدخلوا غرفتك. · النسخة 4</p><button id="go">ابدأ</button></div>
+<p>أعطِ أصدقاءك نفس الكود ليدخلوا غرفتك. · النسخة 5</p><button id="go">ابدأ</button></div>
 <div id="desk" class="ov"><h1>📱</h1><p>هذه اللعبة مخصصة للهاتف فقط. افتح الرابط من جوالك.</p><div class="g">by gold</div></div>
 <div id="rot" class="ov">🔄 قلّب هاتفك بالعرض</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -186,102 +197,4 @@ else if(m.t==='rail'){if(tiles[m.z*W+m.x]===0)tiles[m.z*W+m.x]=5;path.push([m.x,
 else if(m.t==='s'){S=m;me=m.me;ps=m.p;lastSnap=Date.now()}}
 // ---------- input ----------
 const pad=$('pad'),kn=$('kn'),act=$('act');
-function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/46,dy=(e.clientY-r.top-r.height/2)/46;const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}jx=dx;jy=dy;kn.style.transform=`translate(${dx*36}px,${dy*36}px)`}
-pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);jm(e)});
-pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))jm(e)});
-const pup=()=>{jx=jy=0;kn.style.transform=''};pad.addEventListener('pointerup',pup);pad.addEventListener('pointercancel',pup);
-act.addEventListener('pointerdown',eatrix();rock.setMatrixAt(b,dm.matrix);col.setHSL(.08,.05,.38+r2*.15);rock.setColorAt(b,col);b++}
-else if(v===3){dm.scale.set(.9,.85,.9);dm.updateMatrix();iron.setMatrixAt(c,dm.matrix);col.setHSL(.06+r2*.03,.45,.25+r*.08);iron.setColorAt(c,col);c++}
-else if(v===4){dm.position.set(x+.5,0,z+.5);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();water.setMatrixAt(d,dm.matrix);d++}}
-dm.scale.set(1,1,1);
-for(const [o,n] of [[trunk,a],[fol[0],a],[fol[1],a],[fol[2],a],[rock,b],[iron,c],[water,d],[tuft,e]]){o.count=n;o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true}}
-function rails(){let a=0,b=0,g=0;const n=path.length;
-for(let i=0;i<n;i++){const c=path[i],p=path[Math.max(i-1,0)],q=path[Math.min(i+1,n-1)];
-let ix=c[0]-p[0],iz=c[1]-p[1],ox=q[0]-c[0],oz=q[1]-c[1];if(i===0){ix=ox;iz=oz}if(i===n-1){ox=ix;oz=iz}
-const cx=c[0]+.5,cz=c[1]+.5;
-if(ix===ox&&iz===oz){const ry=ix?PI2:0;dm.rotation.set(0,ry,0);dm.scale.set(1,1,1);
-dm.position.set(cx,.025,cz);dm.updateMatrix();ball.setMatrixAt(g++,dm.matrix);
-for(let k=-1;k<=1;k++){dm.position.set(cx+ix*k*.3,.07,cz+iz*k*.3);dm.updateMatrix();sleep.setMatrixAt(a++,dm.matrix)}
-for(const s of[-1,1]){dm.position.set(cx+s*.2*Math.abs(iz),.13,cz+s*.2*Math.abs(ix));dm.updateMatrix();bars.setMatrixAt(b++,dm.matrix)}}
-else{const kx=cx+(-ix+ox)*.5,kz=cz+(-iz+oz)*.5,D=Math.PI/8;
-const at=(r,f)=>[kx+r*(-ox*Math.cos(f)+ix*Math.sin(f)),kz+r*(-oz*Math.cos(f)+iz*Math.sin(f))],hd=f=>Math.atan2(ox*Math.sin(f)+ix*Math.cos(f),oz*Math.sin(f)+iz*Math.cos(f));
-for(let m=0;m<4;m++){const f=(m+.5)*D,ry=hd(f);dm.rotation.set(0,ry,0);
-let P=at(.5,f);dm.position.set(P[0],.025,P[1]);dm.scale.set(1,1,.45);dm.updateMatrix();ball.setMatrixAt(g++,dm.matrix);
-for(const r of[.3,.7]){P=at(r,f);dm.position.set(P[0],.13,P[1]);dm.scale.set(1,1,r*D*1.1/1.02);dm.updateMatrix();bars.setMatrixAt(b++,dm.matrix)}
-if(m<3){const f2=(m+1)*D;P=at(.5,f2);dm.rotation.set(0,hd(f2),0);dm.position.set(P[0],.07,P[1]);dm.scale.set(1,1,1);dm.updateMatrix();sleep.setMatrixAt(a++,dm.matrix)}}}}
-dm.scale.set(1,1,1);sleep.count=a;bars.count=b;ball.count=g;for(const o of[sleep,bars,ball])o.instanceMatrix.needsUpdate=true}
-let stg=null;const paintR=std(0x8a1c1c,.45,.3),steel=std(0x23262b,.4,.7),wood=std(0x7a5230,.8);
-function station(){if(stg)sc.remove(stg);stg=new T.Group();const x=stn[0]+.5,z=stn[1]+.5,add=(g,m,px,py,pz)=>{const o=new T.Mesh(g,m);o.position.set(px,py,pz);o.castShadow=o.receiveShadow=true;stg.add(o);return o};
-add(new T.BoxGeometry(1,.05,1),std(0xffc83d,.3,.6),x,.04,z);
-add(new T.BoxGeometry(2.4,.3,6),std(0x9a958c),x+2,.15,z);add(new T.BoxGeometry(2.9,.12,6.4),paintR,x+2,2.1,z);
-for(const dz of[-2.8,2.8])add(new T.BoxGeometry(.12,1.9,.12),steel,x+2.9,1.1,z+dz);
-const sg=new T.Mesh(new T.PlaneGeometry(2.4,.6),new T.MeshBasicMaterial({map:goldTex}));sg.position.set(x+.77,1.5,z);sg.rotation.y=-PI2;stg.add(sg);sc.add(stg)}
-// ---------- train ----------
-function car(kind){const g=new T.Group(),add=(geo,m,x,y,z,rx,rz)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;if(rz)o.rotation.z=rz;o.castShadow=true;g.add(o);return o};
-add(new T.BoxGeometry(.7,.12,1.0),steel,0,.28,0);
-for(const sx of[-.3,.3])for(const sz of[-.3,.3])add(new T.CylinderGeometry(.16,.16,.08,14),steel,sx,.16,sz,0,PI2);
-if(kind==='loco'){add(new T.CylinderGeometry(.27,.27,.95,16),paintR,0,.62,.12,PI2);add(new T.CylinderGeometry(.08,.11,.34,10),steel,0,1.0,.4);
-for(const z of[-.15,.2,.45])add(new T.CylinderGeometry(.285,.285,.04,16),std(0xffc83d,.3,.7),0,.62,z,PI2);
-add(new T.SphereGeometry(.12,10,8),std(0xffc83d,.3,.7),0,.9,.05);
-add(new T.BoxGeometry(.64,.58,.42),paintR,0,.74,-.36);add(new T.BoxGeometry(.74,.06,.52),steel,0,1.06,-.36);
-add(new T.CylinderGeometry(.28,.28,.05,16),std(0xffc83d,.3,.7),0,.62,.62,PI2);add(new T.BoxGeometry(.3,.12,.2),steel,0,.26,.6);
-const l=add(new T.SphereGeometry(.06,8,6),new T.MeshBasicMaterial({color:0xfff3b0}),0,.62,.68)}
-else if(kind==='tender'){add(new T.BoxGeometry(.66,.34,.72),wood,0,.5,0);add(new T.SphereGeometry(.26,8,6),std(0x111111,.9),0,.7,0)}
-else{add(new T.BoxGeometry(.7,.42,.98),wood,0,.52,0);add(new T.BoxGeometry(.34,.3,.34),std(0x946a3a),0,.88,.1);
-for(const s of[-1,1]){const p=new T.Mesh(new T.PlaneGeometry(.78,.2),new T.MeshBasicMaterial({map:goldTex}));p.position.set(s*.355,.55,0);p.rotation.y=s*PI2;g.add(p)}}
-g.traverse(o=>{if(o.isMesh)o.receiveShadow=true});sc.add(g);return g}
-const loco=car('loco'),tender=car('tender'),craft=car('craft');
-function posAt(q){const n=path.length;if(n<2)return{x:10.5,z:q+.5};
-let i=Math.floor(q+.5),f=q+.5-i;if(i<0){i=0;f=q+.5}if(i>n-1){i=n-1;f=.5}
-const c=path[i],p=path[Math.max(i-1,0)],nx=path[Math.min(i+1,n-1)];
-let ix=c[0]-p[0],iz=c[1]-p[1],ox=nx[0]-c[0],oz=nx[1]-c[1];if(i===0){ix=ox;iz=oz}if(i===n-1){ox=ix;oz=iz}
-const cx=c[0]+.5,cz=c[1]+.5;if(ix===ox&&iz===oz)return{x:cx+ix*(f-.5),z:cz+iz*(f-.5)};
-const kx=cx+(-ix+ox)*.5,kz=cz+(-iz+oz)*.5,th=f*PI2;
-return{x:kx+.5*(-ox*Math.cos(th)+ix*Math.sin(th)),z:kz+.5*(-oz*Math.cos(th)+iz*Math.sin(th))}}
-function place(g,q){const a=posAt(q+.15),b=posAt(q-.15);g.position.set((a.x+b.x)/2,0,(a.z+b.z)/2);g.rotation.y=Math.atan2(a.x-b.x,a.z-b.z)}
-const smoke=[],sm=new T.MeshBasicMaterial({color:0xdddddd,transparent:true,opacity:.5,depthWrite:false});
-for(let i=0;i<14;i++){const m=new T.Mesh(new T.SphereGeometry(.16,8,6),sm.clone());m.visible=false;m.userData.t=9;sc.add(m);smoke.push(m)}
-// ---------- players ----------
-const PM={};
-function pmesh(id,c){const d=CH[c&3],g=new T.Group(),sk=std(d.skin,.7),sh=std(d.shirt,.8),pn=std(d.pants,.85),hc=std(d.hc,.6),add=(geo,m,x,y,z,p)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;(p||g).add(o);return o},piv=(x,y,z)=>{const p=new T.Group();p.position.set(x,y,z);g.add(p);return p};
-add(new T.CylinderGeometry(.17,.15,.38,10),sh,0,.62,0);add(new T.SphereGeometry(.15,14,10),sk,0,.93,0);
-for(const s of[-1,1])add(new T.SphereGeometry(.024,6,6),std(0x111111),s*.055,.95,.135);
-const lL=piv(-.07,.43,0),lR=piv(.07,.43,0);for(const l of[lL,lR]){add(new T.CylinderGeometry(.065,.06,.4,8),pn,0,-.2,0,l);add(new T.BoxGeometry(.1,.05,.16),std(0x2a1f14),0,-.4,.03,l)}
-const aL=piv(-.22,.76,0),aR=piv(.22,.76,0);for(const a of[aL,aR]){add(new T.CylinderGeometry(.05,.045,.34,8),sh,0,-.15,0,a);add(new T.SphereGeometry(.05,8,6),sk,0,-.33,0,a)}
-add(new T.BoxGeometry(.03,.42,.03),wood,0,-.33,.12,aR);add(new T.BoxGeometry(.04,.07,.2),steel,0,-.15,.2,aR);
-if(d.hat==='hard'){add(new T.SphereGeometry(.17,12,8,0,6.283,0,PI2),hc,0,.97,0);add(new T.CylinderGeometry(.2,.2,.02,14),hc,0,.97,.02)}
-else if(d.hat==='cap'){add(new T.SphereGeometry(.165,12,8,0,6.283,0,PI2),hc,0,.97,0);add(new T.BoxGeometry(.18,.02,.12),hc,0,.97,.16)}
-else if(d.hat==='cow'){add(new T.CylinderGeometry(.3,.3,.02,16),hc,0,.99,0);add(new T.CylinderGeometry(.12,.15,.14,12),hc,0,1.06,0)}
-else{add(new T.SphereGeometry(.16,12,10),hc,0,.96,-.03);add(new T.SphereGeometry(.07,8,6),hc,0,.88,-.17)}
-g.userData={c,lL,lR,aL,aR,u:0};sc.add(g);return g}
-const mark=new T.Mesh(new T.BoxGeometry(.96,.05,.96),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.45}));mark.visible=false;sc.add(mark);
-// ---------- network ----------
-function connect(){ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws?r='+room);
-ws.onopen=()=>{tries=0};ws.onmessage=e=>onmsg(JSON.parse(e.data));ws.onclose=()=>{if(started)setTimeout(connect,Math.min(4000,400*++tries))}}
-const tx=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
-function onmsg(m){
-if(m.t==='world'){lv=m.lv;tiles=Uint8Array.from(m.tiles,Number);path=m.path;stn=m.st;mine.x=m.you[0];mine.z=m.you[1];ps=pc=2;rebuild();rails();station()}
-else if(m.t==='tile'){tiles[m.z*W+m.x]=m.v;rebuild()}
-else if(m.t==='rail'){if(tiles[m.z*W+m.x]===0)tiles[m.z*W+m.x]=5;path.push([m.x,m.z]);rails()}
-else if(m.t==='s'){S=m;me=m.me;ps=m.p}}
-// ---------- input ----------
-const pad=$('pad'),kn=$('kn'),act=$('act');
-function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/46,dy=(e.clientY-r.top-r.height/2)/46;const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}jx=dx;jy=dy;kn.style.transform=`translate(${dx*36}px,${dy*36}px)`}
-pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);jm(e)});
-pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))jm(e)});
-const pup=()=>{jx=jy=0;kn.style.transform=''};pad.addEventListener('pointerup',pup);pad.addEventListener('pointercancel',pup);
-act.addEventListener('pointerdown',e=>{act.setPointerCapture(e.pointerId);acting=true});
-const aup=()=>{acting=false};act.addEventListener('pointerup',aup);act.addEventListener('pointercancel',aup);
-const solid=(x,z)=>{const a=Math.floor(x),b=Math.floor(z);if(a<0||b<0||a>=W||b>=L)return true;const v=tiles[b*W+a];return v>0&&v<5};
-const ok=(x,z)=>!solid(x-.2,z-.2)&&!solid(x+.2,z-.2)&&!solid(x-.2,z+.2)&&!solid(x+.2,z+.2);
-const at=(x,z)=>x<0||z<0||x>=W||z>=L?4:tiles[z*W+x];
-function cand(px,pz){const n=path.length,e=path[n-1],pr=path[n-2],dx=e[0]-pr[0],dz=e[1]-pr[1];let best=null,bd=1e9;
-for(const[ax,az]of[[dx,dz],[dz,-dx],[-dz,dx]]){const x=e[0]+ax,z=e[1]+az,v=at(x,z);if(v!==0&&v!==6)continue;const d=Math.hypot(x+.5-px,z+.5-pz);if(d<bd){bd=d;best=[x,z]}}return best}
-function target(){const n=path.length;if(n<2)return null;let best=null,bs=9;const px=mine.x,pz=mine.z,s=S.k;
-for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const a=Math.floor(px)+i,b=Math.floor(pz)+j,v=at(a,b);if(v>=1&&v<=3){const d=Math.hypot(a+.5-px,b+.5-pz)/1.7;if(d<1&&d<bs){bs=d;best={k:'hit',x:a,z:b}}}}
-const wg=posAt(pc-2.2);if(s.w>0&&s.i>0){const d=Math.hypot(wg.x-px,wg.z-pz)/3;if(d<1&&d<bs){bs=d;best={k:'craft'}}}
-if(s.r>0){const e=path[n-1],d=Math.hypot(e[0]+.5-px,e[1]+.5-pz)/3;if(d<1&&d<bs){const g=cand(px,pz);if(g){bs=d;best={k:'rail',gx:g[0],gz:g[1]}}}}
-return best}
-// ---------- loop ----------
-let last=performance.now();
-function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.1);last=now;if
+function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/46,dy=(e.clie
