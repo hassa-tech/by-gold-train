@@ -31,6 +31,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .ov button,.sm{background:var(--brass);color:#1a1409;border:0;border-radius:12px;padding:11px 26px;font-size:17px;font-weight:800}
 .sm{padding:10px 14px;font-size:15px;background:#3a2f1e;color:var(--fg);border:1px solid #ffc83d88}
 #desk{display:none}
+#dbg{position:fixed;left:0;right:0;bottom:0;z-index:99;background:#8a1111ee;color:#fff;font:11px/1.4 monospace;padding:4px 6px;direction:ltr;text-align:left;white-space:pre-wrap;max-height:45%;overflow:auto;display:none;pointer-events:none}
 #ver{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;font-size:11px;opacity:.55;pointer-events:none}
 .ov button.ch{padding:8px 10px;font-size:14px;background:#3a2f1e;color:var(--fg);border:1px solid #ffc83d55}
 .ov button.ch.on{background:var(--brass);color:#1a1409}
@@ -49,21 +50,26 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 }
 </style></head><body>
 <canvas id="c"></canvas><div id="vg"></div>
+<div id="dbg"></div>
+<script>
+(function(){var d=document.getElementById("dbg");function log(m){d.style.display="block";d.textContent+=m+"\n"}
+addEventListener("error",function(e){var t=e.target;if(t&&t!==window&&(t.src||t.href)){if(!/jsdelivr/.test(t.src||""))log("Load failed: "+(t.src||t.href));return}log("Error: "+e.message+" ["+((e.filename||"").split("/").pop())+":"+e.lineno+"]")},true);
+addEventListener("unhandledrejection",function(e){log("Promise: "+(e.reason&&e.reason.message||e.reason))});
+addEventListener("load",function(){setTimeout(function(){if(typeof THREE==="undefined")log("THREE library not loaded");else if(!document.getElementById("room").value)log("Main script did not start")},1500)})})();
+</script>
 <div id="hud"><div id="top"><span>🪵 <b id="kw">0</b></span><span>🪨 <b id="ks">0</b></span><span>⛓️ <b id="ki">0</b></span><span>🛤️ <b id="kr">0</b></span><span>🌍 <b id="lv">1</b></span><span>👥 <b id="np">1</b></span></div>
 <div id="mid"><div id="warn"></div><div id="tip"></div></div>
 <div id="btns"><button id="code" class="sm">📋 <span id="rc"></span></button><button id="share" class="sm">🔗</button></div></div>
-<div id="msg"></div><div id="by">by gold</div><div id="ver">النسخة 5</div>
+<div id="msg"></div><div id="by">by gold</div><div id="ver">النسخة 6</div>
 <div id="pad"><div id="kn"></div></div><button id="act">—</button>
 <div id="ttl" class="ov"><h1>قطار الذهب</h1><div class="g">by gold</div>
 <p class="d">القطار لا يتوقف. اقطعوا الأشجار وكسّروا الحجر والحديد، اصنعوا السكك في العربة وضعوها أمامه قبل أن يصل لآخرها.</p>
 <div class="row" id="chs"></div>
 <div class="row"><input id="room" maxlength="12" autocomplete="off" aria-label="رمز الغرفة"><button id="cpt" class="sm">📋 نسخ الكود</button></div>
-<p>أعطِ أصدقاءك نفس الكود ليدخلوا غرفتك. · النسخة 5</p><button id="go">ابدأ</button></div>
+<p>أعطِ أصدقاءك نفس الكود ليدخلوا غرفتك. · النسخة 6</p><button id="go">ابدأ</button></div>
 <div id="desk" class="ov"><h1>📱</h1><p>هذه اللعبة مخصصة للهاتف فقط. افتح الرابط من جوالك.</p><div class="g">by gold</div></div>
 <div id="rot" class="ov">🔄 قلّب هاتفك بالعرض</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 const $=id=>document.getElementById(id),T=THREE;
 if(!(matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0)){$('desk').style.display='flex';$('ttl').style.display='none'}else main();
@@ -74,7 +80,9 @@ let S={v:.4,st:'play',tm:0,g:0,k:{w:0,s:0,i:0,r:0},pl:[],h:null};
 const MB='https://threejs.org/examples/models/gltf/';
 const CH=[{n:'الجندي',e:'🪖',url:MB+'Soldier.glb'},{n:'ميشيل',e:'👩',url:MB+'Michelle.glb'},{n:'الروبوت',e:'🤖',url:MB+'Xbot.glb'},{n:'عامل',e:'👷',shirt:0xd9822b,pants:0x2f3a4f,skin:0xe0b08c,hat:'hard',hc:0xffc83d}];
 const MODELS={};
-function needModel(c){const d=CH[c];if(!d.url||MODELS[c]!==undefined||!T.GLTFLoader)return;MODELS[c]=null;
+function ld(u){const s=document.createElement('script');s.src=u;document.head.appendChild(s)}
+ld('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js');ld('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js');
+function needModel(c){const d=CH[c];if(!d.url||MODELS[c]!==undefined||!T.GLTFLoader||!T.SkeletonUtils)return;MODELS[c]=null;
 new T.GLTFLoader().load(d.url,g=>{try{const b=new T.Box3().setFromObject(g.scene),ht=(b.max.y-b.min.y)||1.8;g.scene.traverse(o=>{if(o.isMesh)o.castShadow=true});MODELS[c]={g,s:1.05/ht}}catch(e){MODELS[c]=false}},undefined,()=>{MODELS[c]=false})}
 const mine={x:10.5,z:2.5,r:0},foc=new T.Vector3(10.5,0,6);
 let H=null,ch=0,tH=0,jx=0,jy=0,acting=false,swing=0,tPos=0,tAct=0,hudT=0,smokeT=0;
@@ -197,4 +205,73 @@ else if(m.t==='rail'){if(tiles[m.z*W+m.x]===0)tiles[m.z*W+m.x]=5;path.push([m.x,
 else if(m.t==='s'){S=m;me=m.me;ps=m.p;lastSnap=Date.now()}}
 // ---------- input ----------
 const pad=$('pad'),kn=$('kn'),act=$('act');
-function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/46,dy=(e.clie
+function jm(e){const r=pad.getBoundingClientRect();let dx=(e.clientX-r.left-r.width/2)/46,dy=(e.clientY-r.top-r.height/2)/46;const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}jx=dx;jy=dy;kn.style.transform=`translate(${dx*36}px,${dy*36}px)`}
+pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);jm(e)});
+pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))jm(e)});
+const pup=()=>{jx=jy=0;kn.style.transform=''};pad.addEventListener('pointerup',pup);pad.addEventListener('pointercancel',pup);
+act.addEventListener('pointerdown',e=>{act.setPointerCapture(e.pointerId);acting=true;doAct()});
+const aup=()=>{acting=false};act.addEventListener('pointerup',aup);act.addEventListener('pointercancel',aup);
+function doAct(){if(!H)return;tAct=1.1;swing=.3;tx({t:'act',x:+mine.x.toFixed(2),z:+mine.z.toFixed(2),r:+mine.r.toFixed(2)})}
+const solid=(x,z)=>{const a=Math.floor(x),b=Math.floor(z);if(a<0||b<0||a>=W||b>=L)return true;const v=tiles[b*W+a];return v>0&&v<5};
+const ok=(x,z)=>!solid(x-.2,z-.2)&&!solid(x+.2,z-.2)&&!solid(x-.2,z+.2)&&!solid(x+.2,z+.2);
+const at=(x,z)=>x<0||z<0||x>=W||z>=L?4:tiles[z*W+x];
+function cand(px,pz){const n=path.length,e=path[n-1],pr=path[n-2],dx=e[0]-pr[0],dz=e[1]-pr[1],fx=Math.sin(mine.r),fz=Math.cos(mine.r);let best=null,bs=-9;
+for(const[ax,az,bo]of[[dx,dz,.15],[dz,-dx,0],[-dz,dx,0]]){const x=e[0]+ax,z=e[1]+az,v=at(x,z);if(v!==0&&v!==6)continue;const sc=ax*fx+az*fz+bo;if(sc>bs){bs=sc;best=[x,z]}}return best}
+function target(){const n=path.length;if(n<2)return null;let best=null,bs=9;const px=mine.x,pz=mine.z,s=S.k;
+for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const a=Math.floor(px)+i,b=Math.floor(pz)+j,v=at(a,b);if(v>=1&&v<=3){const d=Math.hypot(a+.5-px,b+.5-pz)/1.7;if(d<1&&d<bs){bs=d;best={k:'hit',x:a,z:b}}}}
+const wg=posAt(pc-2.2);if(s.w>0&&s.i>0){const d=Math.hypot(wg.x-px,wg.z-pz)/3;if(d<1&&d<bs){bs=d;best={k:'craft'}}}
+if(s.r>0){const e=path[n-1],d=Math.hypot(e[0]+.5-px,e[1]+.5-pz)/3;if(d<1&&d<bs){const g=cand(px,pz);if(g){bs=d;best={k:'rail',gx:g[0],gz:g[1]}}}}
+return best}
+// ---------- loop ----------
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.1);last=now;if(started)step(dt);draw(dt)}
+function step(dt){
+const run=S.st==='play'||S.st==='station',vx=run?-jy*3.4:0,vz=run?jx*3.4:0,dx=vx*dt,dz=vz*dt;
+if(dx||dz){if(ok(mine.x+dx,mine.z))mine.x+=dx;if(ok(mine.x,mine.z+dz))mine.z+=dz;mine.r=Math.atan2(dx,dz)}
+tPos+=dt;if(tPos>.1){tPos=0;tx({t:'in',x:+mine.x.toFixed(1),z:+mine.z.toFixed(1),r:+mine.r.toFixed(1),vx:+vx.toFixed(1),vz:+vz.toFixed(1),c:ch})}
+tH-=dt;if(tH<=0){tH=.1;H=S.st==='play'?target():null}
+tAct-=dt;if(acting&&H&&tAct<=0)doAct();
+if(S.st==='play'&&!S.g)ps+=S.v*dt;pc+=(ps-pc)*Math.min(1,dt*6);
+hudT+=dt;if(hudT>.2){hudT=0;hud()}}
+function hud(){const off=started&&Date.now()-lastSnap>4000;if(off){$('warn').textContent='⚠️ غير متصل بالسيرفر… جارٍ إعادة المحاولة';$('warn').className='bad'}if(!path.length)return;const k=S.k;$('kw').textContent=k.w;$('ks').textContent=k.s;$('ki').textContent=k.i;$('kr').textContent=k.r;$('lv').textContent=lv;$('np').textContent=S.pl.length;
+const left=Math.max(0,path.length-1-pc),w=$('warn'),gap=stn[1]-path[path.length-1][1];
+const lim=Date.now()-(window.BGLIM||0)<20000;
+w.textContent=off?'⚠️ غير متصل بالسيرفر… جارٍ إعادة المحاولة':lim?'⚠️ الاستضافة تحدّ عدد الطلبات، انتظر قليلاً':'سكك أمام القطار: '+Math.floor(left)+'  ·  باقي للمحطة: '+gap;w.className=left<6||lim||off?'bad':'';
+let tp='';if(S.g>0)tp='القطار يتحرك بعد '+S.g+' ث: اجمعوا الموارد!';else if(k.r>0)tp='ضع السكك عند آخر سكة (اقترب منها)';else if(k.w>0&&k.i>0)tp='اقترب من العربة المكتوب عليها by gold ثم اضغط اصنع';else if(k.w===0)tp='اقطع شجرة 🪓 (اقترب منها واضغط)';else tp='كسّر الحجر الداكن البرتقالي ⛏️ للحديد';
+$('tip').textContent=tp;
+const h=H;let t='—';if(h){if(h.k==='hit')t=tiles[h.z*W+h.x]===1?'اقطع 🪓':'كسّر ⛏️';else if(h.k==='craft')t='اصنع 🛤️';else t='ضع سكة'}
+act.textContent=t;act.className=h?'on':'';
+$('msg').textContent=S.st==='over'?'خسرتم! القطار وصل لآخر سكة. إعادة بعد '+S.tm:S.st==='station'?'وصلتم المحطة! عالم جديد بعد '+S.tm:''}
+function draw(dt){
+place(loco,pc);place(tender,pc-1.1);place(craft,pc-2.2);
+const seen={};for(const p of S.pl){const id=p[0],c=(p[4]||0)&3;seen[id]=1;if(CH[c].url)needModel(c);let m=PM[id];if(m&&(m.userData.c!==c||(!m.userData.glb&&CH[c].url&&MODELS[c]))){sc.remove(m);m=null}if(!m)m=PM[id]=pmesh(id,c);const self=id===me,k=Math.min(1,dt*12);
+const tx=self?mine.x:p[1],tz=self?mine.z:p[2],mv=Math.hypot(tx-m.position.x,tz-m.position.z),u=m.userData,amp=Math.min(1,mv/Math.max(dt,.001)/2.5);
+m.position.x+=(tx-m.position.x)*k;m.position.z+=(tz-m.position.z)*k;u.u+=dt*10*amp;
+const r=self?mine.r:p[3];m.rotation.y+=Math.atan2(Math.sin(r-m.rotation.y),Math.cos(r-m.rotation.y))*Math.min(1,dt*10);
+if(u.glb){try{u.mx.update(dt);anim(u,amp)}catch(e){}}else{const sw=Math.sin(u.u);u.lL.rotation.x=sw*.8*amp;u.lR.rotation.x=-sw*.8*amp;u.aL.rotation.x=-sw*.7*amp;u.aR.rotation.x=self&&swing>0?-Math.sin(swing*Math.PI/.3)*1.5:sw*.7*amp}}
+for(const k in PM)if(!seen[k]){sc.remove(PM[k]);delete PM[k]}
+if(swing>0)swing-=dt;
+const h=H;mark.visible=false;if(h&&S.st==='play'){const gx=h.k==='hit'?h.x:h.k==='rail'?h.gx:null;if(gx!=null){mark.visible=true;mark.position.set(gx+.5,.06,(h.k==='hit'?h.z:h.gz)+.5);mark.material.color.set(h.k==='hit'?0xffffff:0xffc83d)}}
+smokeT-=dt;if(smokeT<=0&&started){smokeT=.16;const m=smoke.find(s=>s.userData.t>=2);if(m){const v=new T.Vector3(0,1.15,.4);loco.localToWorld(v);m.position.copy(v);m.userData.t=0;m.scale.setScalar(.6);m.visible=true}}
+for(const m of smoke){if(!m.visible)continue;m.userData.t+=dt;const u=m.userData.t/2;if(u>=1){m.visible=false;continue}m.position.y+=dt*.55;m.position.x+=dt*.1;m.scale.setScalar(.6+u*1.8);m.material.opacity=.5*(1-u)}
+// side camera: sees the whole scene ahead
+const k=Math.min(1,dt*4),fz=(mine.z*2+posAt(pc).z)/3+2;foc.x+=(mine.x-foc.x)*k;foc.z+=(fz-foc.z)*k;
+cam.position.set(foc.x-14,12,foc.z);cam.lookAt(foc.x,0,foc.z);sky.position.copy(cam.position);
+sun.position.set(foc.x-9,22,foc.z-7);sun.target.position.set(foc.x,0,foc.z);
+ren.render(sc,cam)}
+function size(){ren.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();requestAnimationFrame(loop);
+// ---------- start / share / copy ----------
+function cp(t,btn){const o=btn.innerHTML,ok=()=>{btn.textContent='✓ تم النسخ';setTimeout(()=>btn.innerHTML=o,1400)};
+(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(ok).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){}a.remove()})}
+const chs=$('chs');CH.forEach((d,i)=>{const b=document.createElement('button');b.className='ch'+(i===ch?' on':'');b.textContent=d.e+' '+d.n;b.onclick=()=>{ch=i;try{localStorage.setItem('bgch',i)}catch(e){}[...chs.children].forEach((x,j)=>x.className='ch'+(j===i?' on':''))};chs.appendChild(b)});
+const q=new URLSearchParams(location.search).get('r');
+$('room').value=q||Math.random().toString(36).slice(2,6);
+const clean=()=>($('room').value||'gold').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12)||'gold';
+$('cpt').onclick=()=>cp(clean(),$('cpt'));
+$('go').onclick=()=>{room=clean();$('rc').textContent=room;history.replaceState(null,'','?r='+room);$('ttl').style.display='none';started=true;lastSnap=Date.now();connect();
+try{const de=document.documentElement;(de.requestFullscreen?de.requestFullscreen():Promise.reject()).then(()=>screen.orientation.lock('landscape')).catch(()=>{})}catch(e){}};
+$('code').onclick=()=>cp(room,$('code'));
+$('share').onclick=()=>{const u=location.origin+'/?r='+room;if(navigator.share)navigator.share({title:'قطار الذهب – by gold',url:u}).catch(()=>{});else cp(u,$('share'))};
+}
+</script></body></html>
